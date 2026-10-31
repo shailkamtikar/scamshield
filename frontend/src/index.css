@@ -43,6 +43,7 @@ body {
 }
 ::selection { background: rgba(var(--tint), 0.35); color: #fff; }
 
+@layer components {
 .label {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -71,6 +72,7 @@ body {
 
 .scanline {
   background: linear-gradient(to bottom, transparent, rgba(var(--tint), 0.55), transparent);
+}
 }
 
 @keyframes scan-sweep {

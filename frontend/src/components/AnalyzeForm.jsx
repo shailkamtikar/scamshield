@@ -42,9 +42,15 @@ export default function AnalyzeForm({ mode, onMode, onSubmit }) {
     [ready, mode, message, file, org, onSubmit],
   );
 
-  const onKey = (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") submit(e);
-  };
+  const submitRef = useRef(submit);
+  submitRef.current = submit;
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") submitRef.current(e);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const switchMode = (m) => {
     setFile(null);
@@ -88,7 +94,6 @@ export default function AnalyzeForm({ mode, onMode, onSubmit }) {
               ref={area}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={onKey}
               maxLength={5000}
               rows={5}
               placeholder="Paste the suspicious message here…"
