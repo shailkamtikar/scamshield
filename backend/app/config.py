@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     primary_gemini_model: str = "gemini-3.6-flash"
     secondary_gemini_model: str = "gemini-3.5-flash-lite"
 
+    # The lighter model answers in ~1s versus 5-40s, so it goes first by default.
+    gemini_fast_first: bool = True
+    gemini_timeout_seconds: int = 15
+
     tesseract_cmd: str | None = Field(default_factory=_default_tesseract)
 
     cors_origins: Annotated[list[str], NoDecode] = [

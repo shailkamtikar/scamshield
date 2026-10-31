@@ -27,7 +27,7 @@ PROMPT = (
 def read_image(data: bytes, mime: str) -> VisionRead | None:
     if not settings.enable_vision or not settings.gemini_api_key:
         return None
-    for model in (settings.primary_gemini_model, settings.secondary_gemini_model):
+    for model in gemini.model_order():
         try:
             response = gemini._get_client().models.generate_content(
                 model=model,

@@ -3,6 +3,7 @@ import threading
 import time
 
 from google import genai
+from google.genai import types
 from google.genai import errors as genai_errors
 
 from app.config import settings
@@ -25,7 +26,10 @@ def _get_client() -> genai.Client:
     if _client is None:
         if not settings.gemini_api_key:
             raise GeminiUnavailable("GEMINI_API_KEY is not configured.")
-        _client = genai.Client(api_key=settings.gemini_api_key)
+        _client = genai.Client(
+            api_key=settings.gemini_api_key,
+            http_options=types.HttpOptions(timeout=settings.gemini_timeout_seconds * 1000),
+        )
     return _client
 
 
@@ -63,6 +67,11 @@ Rules:
 """
 
 
+def model_order() -> tuple[str, str]:
+    pair = (settings.primary_gemini_model, settings.secondary_gemini_model)
+    return pair[::-1] if settings.gemini_fast_first else pair
+
+
 def _call(model: str, prompt: str) -> GeminiAnalysis:
     global _last_call
     with _lock:
@@ -85,7 +94,7 @@ def analyze(case_summary: dict) -> tuple[GeminiAnalysis, str]:
 
     prompt = build_prompt(case_summary)
     last_err: Exception | None = None
-    for model in (settings.primary_gemini_model, settings.secondary_gemini_model):
+    for model in model_order():
         try:
             result = (_call(model, prompt), model)
             _cache[key] = result

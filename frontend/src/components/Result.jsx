@@ -257,7 +257,9 @@ export default function Result({ meta, imageUrl, onReset }) {
   const [pdfBusy, setPdfBusy] = useState(false);
   const v = getVerdict(result.verdict);
   const top = useRef(null);
-  useEffect(() => top.current?.scrollIntoView({ behavior: "smooth", block: "start" }), []);
+  useEffect(() => {
+    top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const summary = () =>
     [`ScamShield: ${v.word.toUpperCase()}${result.verdict === "COULD_NOT_VERIFY" ? "" : ` (risk ${result.risk_score}/100, ${Math.round(result.confidence * 100)}% confidence)`}`, "", ...result.reasons.map((r) => `- ${r}`), "", `What to do: ${result.recommendation}`].join("\n");
