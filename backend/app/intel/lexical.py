@@ -80,15 +80,18 @@ def _match_brand(word: str, tokens: dict, allow_substring: bool = True):
     if allow_substring:
         for token, brand in tokens.items():
             if len(token) >= 5 and token not in GENERIC_BRAND_WORDS and token in word and word != token:
-                return brand, "embedded"
+                rest = word.replace(token, "", 1)
+                # only when what is glued on is an account/security word or digits
+                if rest in ADMIN_WORDS or rest.isdigit() or rest in {"india", "bharat", "official", "app", "bank", "online"}:
+                    return brand, "embedded"
 
     for variant in _deleet_variants(word):
         if variant != word and variant in tokens and len(variant) >= 4:
             return tokens[variant], "lookalike"
 
-    if len(word) >= 5:
+    if len(word) >= 6:
         for token, brand in tokens.items():
-            if len(token) >= 5 and abs(len(token) - len(word)) <= 2 and word != token:
+            if len(token) >= 6 and len(word) >= 6 and abs(len(token) - len(word)) <= 2 and word != token and token not in GENERIC_BRAND_WORDS:
                 if ratio(word, token) >= 85:
                     return brand, "lookalike"
     return None, None

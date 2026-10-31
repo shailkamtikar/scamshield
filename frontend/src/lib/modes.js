@@ -1,26 +1,7 @@
-export const MODES = {
-  TEXT: "text",
-  SMS_IMAGE: "sms_image",
-  QR_CODE: "qr_code",
-};
+export const MODES = { TEXT: "text", IMAGE: "image", QR: "qr" };
 
 export const MODE_CONFIG = {
-  [MODES.TEXT]: {
-    label: "SMS / Text",
-    icon: "sms",
-    loadingHeadline: "Investigating suspicious content…",
-    firstStage: "Extracting content",
-  },
-  [MODES.SMS_IMAGE]: {
-    label: "SMS Image",
-    icon: "image",
-    loadingHeadline: "Investigating suspicious screenshot…",
-    firstStage: "Running OCR on screenshot",
-  },
-  [MODES.QR_CODE]: {
-    label: "QR Code",
-    icon: "qr_code_2",
-    loadingHeadline: "Investigating QR code…",
-    firstStage: "Decoding QR code",
-  },
+  [MODES.TEXT]: { no: "01", label: "Message", hint: "Paste an SMS, WhatsApp message or email" },
+  [MODES.IMAGE]: { no: "02", label: "Screenshot", hint: "Upload a screenshot of the message" },
+  [MODES.QR]: { no: "03", label: "QR code", hint: "Scan with your camera or upload an image" },
 };

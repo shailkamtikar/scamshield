@@ -73,7 +73,7 @@ def analyze_url(
     structural_fake = any(s.id in V.FAKE_IDS for s in signals)
 
     if network:
-        need_fetch = info.tier != "OFFICIAL"
+        need_fetch = info.tier != "OFFICIAL" and settings.enable_fetch
         need_facts = info.tier == "UNKNOWN" and not parsed.is_ip and not info.platform
         use_vt = info.tier == "UNKNOWN"
         with ThreadPoolExecutor(max_workers=3) as pool:

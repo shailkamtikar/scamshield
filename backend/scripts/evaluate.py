@@ -32,15 +32,25 @@ def main():
     ap.add_argument("--split", default="all")
     ap.add_argument("--show-errors", type=int, default=0)
     ap.add_argument("--no-gate", action="store_true")
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--include-malware", action="store_true", help="count malware-download links (not phishing) in the gate")
     args = ap.parse_args()
 
     if args.live:
         settings.enable_page_inspection = False  # never download suspicious pages
+        settings.enable_fetch = False  # never even connect to suspicious sites
 
     rows = list(csv.DictReader(open(ROOT / "data" / "benchmark" / "urls.csv", encoding="utf-8")))
+    if not args.include_malware:
+        # malware-download links (often on github.com etc.) are a different problem from phishing
+        rows = [r for r in rows if r["category"] != "malware_feed"]
     if args.split != "all":
         rows = [r for r in rows if r["split"] == args.split]
 
+    if args.limit:
+        import random
+        random.Random(1).shuffle(rows)
+        rows = rows[: args.limit]
     tp = fn = fp = tn = 0
     per_cat = defaultdict(lambda: Counter())
     errors = []

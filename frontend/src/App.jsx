@@ -1,132 +1,101 @@
-import { useEffect, useRef, useState } from "react";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
+import AmbientBackground from "./components/AmbientBackground";
 import AnalyzeForm from "./components/AnalyzeForm";
-import LoadingPanel from "./components/LoadingPanel";
-import ResultPanel from "./components/ResultPanel";
-import ErrorPanel from "./components/ErrorPanel";
-import { investigateText, investigateImage, investigateQr, checkBackendHealth } from "./lib/api";
+import Hero from "./components/Hero";
+import Result from "./components/Result";
+import ScanTimeline from "./components/ScanTimeline";
+import { Footer, Header, Rail } from "./components/Shell";
+import { useInvestigation } from "./hooks/useInvestigation";
+import { fetchHealth } from "./lib/api";
 import { MODES } from "./lib/modes";
 
-function makeLocalRef() {
-  const time = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `LOCAL-${time}-${rand}`;
+const PILLARS = [
+  ["01", "Links", "Follows redirects and shortened links, checks Google Safe Browsing, VirusTotal, URLhaus and OpenPhish, reads domain age."],
+  ["02", "Wording", "Spots urgency, threats, OTP requests, fake KYC and digital-arrest scripts in English, Hindi and Hinglish."],
+  ["03", "Payments", "Reads UPI and QR codes, shows who you would pay, and flags fake refund and collect-money tricks."],
+];
+
+function Pillars() {
+  return (
+    <motion.div className="mt-16 grid border-y hairline sm:grid-cols-3" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}>
+      {PILLARS.map(([no, title, text], i) => (
+        <div key={no} className={`px-1 py-7 sm:px-6 ${i > 0 ? "border-t hairline sm:border-l sm:border-t-0" : ""}`}>
+          <div className="font-mono text-[12px] tint-text">{no}</div>
+          <div className="display mt-2 text-[28px]">{title}</div>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-muted">{text}</p>
+        </div>
+      ))}
+    </motion.div>
+  );
 }
 
-const INVESTIGATORS = {
-  [MODES.TEXT]: investigateText,
-  [MODES.SMS_IMAGE]: investigateImage,
-  [MODES.QR_CODE]: investigateQr,
-};
-
-// idle -> loading -> result | error
 export default function App() {
-  const [status, setStatus] = useState("idle");
+  const inv = useInvestigation();
   const [mode, setMode] = useState(MODES.TEXT);
-  const [submission, setSubmission] = useState(null);
-  const [result, setResult] = useState(null);
-  const [latencyMs, setLatencyMs] = useState(null);
-  const [localRef, setLocalRef] = useState(null);
-  const [generatedAt, setGeneratedAt] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [backendOnline, setBackendOnline] = useState(null);
-  const imagePreviewUrlRef = useRef(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+  const [health, setHealth] = useState(undefined); // undefined = checking, null = offline
+  const [imageUrl, setImageUrl] = useState(null);
 
   useEffect(() => {
-    checkBackendHealth().then(setBackendOnline);
+    let live = true;
+    const ping = () => fetchHealth().then((h) => live && setHealth(h));
+    ping();
+    const id = setInterval(ping, 60000);
+    return () => { live = false; clearInterval(id); };
   }, []);
 
+  const verdict = inv.phase === "result" ? inv.meta?.result.verdict : inv.phase === "scanning" ? inv.preview?.verdict : undefined;
   useEffect(() => {
-    return () => {
-      if (imagePreviewUrlRef.current) URL.revokeObjectURL(imagePreviewUrlRef.current);
-    };
-  }, []);
+    if (verdict) document.documentElement.dataset.verdict = verdict;
+    else delete document.documentElement.dataset.verdict;
+  }, [verdict]);
 
-  async function handleSubmit(formValues) {
-    setSubmission(formValues);
-    setStatus("loading");
-    setErrorMessage("");
+  const submit = (m, input) => {
+    setImageUrl((old) => { if (old) URL.revokeObjectURL(old); return input.file && m === MODES.IMAGE ? URL.createObjectURL(input.file) : null; });
+    inv.run(m, input);
+  };
 
-    if (imagePreviewUrlRef.current) {
-      URL.revokeObjectURL(imagePreviewUrlRef.current);
-      imagePreviewUrlRef.current = null;
-    }
-    if (formValues.file) {
-      const url = URL.createObjectURL(formValues.file);
-      imagePreviewUrlRef.current = url;
-      setImagePreviewUrl(url);
-    } else {
-      setImagePreviewUrl(null);
-    }
-
-    try {
-      const investigate = INVESTIGATORS[formValues.mode];
-      const { result: data, latencyMs: ms } = await investigate(formValues);
-      setResult(data);
-      setLatencyMs(ms);
-      setLocalRef(makeLocalRef());
-      setGeneratedAt(new Date());
-      setStatus("result");
-      setBackendOnline(true);
-    } catch (err) {
-      setErrorMessage(err.message || "An unexpected error occurred.");
-      setStatus("error");
-      if (err.status === undefined) setBackendOnline(false);
-    }
-  }
-
-  function handleReset() {
-    setStatus("idle");
-    setResult(null);
-    setSubmission(null);
-    setErrorMessage("");
-    if (imagePreviewUrlRef.current) {
-      URL.revokeObjectURL(imagePreviewUrlRef.current);
-      imagePreviewUrlRef.current = null;
-    }
-    setImagePreviewUrl(null);
-  }
+  const reset = () => { setImageUrl((old) => { if (old) URL.revokeObjectURL(old); return null; }); inv.reset(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const done = useMemo(() => inv.stages.filter((s) => s.status === "done").length, [inv.stages]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
-      <Header backendOnline={backendOnline} />
+    <div className="relative min-h-screen">
+      <AmbientBackground />
+      <Header health={health} onHome={reset} />
+      <Rail health={health} mode={mode} phase={inv.phase} stagesDone={done} stagesTotal={5} />
 
-      <main className="mx-auto w-full max-w-[860px] flex-1 px-4 pb-16 pt-24 md:px-8">
-        {status === "idle" && (
-          <div className="flex flex-col gap-6">
-            <div className="text-center">
-              <h1 className="font-display text-[1.75rem] font-semibold tracking-tight text-text md:text-[2rem]">
-                Investigate a suspicious message
-              </h1>
-              <p className="mx-auto mt-2 max-w-[520px] text-[14px] text-text-muted">
-                ScamShield runs your content through URL, impersonation, and social-engineering
-                checks, then a Gemini-powered risk assessment — in one request.
-              </p>
-            </div>
-            <AnalyzeForm mode={mode} onModeChange={setMode} onSubmit={handleSubmit} disabled={false} />
-          </div>
-        )}
+      <main className="mx-auto max-w-[1320px] px-4 pb-24 pt-20 sm:px-6 lg:pl-[168px]">
+        <AnimatePresence mode="wait">
+          {inv.phase === "idle" && (
+            <motion.div key="idle" exit={{ opacity: 0, y: -16, transition: { duration: 0.3 } }}>
+              <Hero />
+              <div className="mt-10 max-w-[860px] sm:mt-14">
+                <AnalyzeForm mode={mode} onMode={setMode} onSubmit={submit} />
+              </div>
+              <Pillars />
+            </motion.div>
+          )}
 
-        {status === "loading" && <LoadingPanel mode={mode} />}
+          {inv.phase === "scanning" && (
+            <ScanTimeline key="scan" mode={inv.meta?.mode || mode} stages={inv.stages} partialUrls={inv.partialUrls} onCancel={inv.cancel} />
+          )}
 
-        {status === "result" && result && (
-          <ResultPanel
-            result={result}
-            submission={submission}
-            mode={mode}
-            imagePreviewUrl={imagePreviewUrl}
-            latencyMs={latencyMs}
-            localRef={localRef}
-            generatedAt={generatedAt}
-            onReset={handleReset}
-          />
-        )}
+          {inv.phase === "result" && inv.meta && (
+            <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+              <Result meta={inv.meta} imageUrl={imageUrl} onReset={reset} />
+            </motion.div>
+          )}
 
-        {status === "error" && <ErrorPanel message={errorMessage} onRetry={handleReset} />}
+          {inv.phase === "error" && (
+            <motion.div key="error" role="alert" className="max-w-[720px] pt-12" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="label mb-3 text-danger">Could not complete the check</div>
+              <h2 className="display text-[clamp(2.4rem,7vw,5rem)]">Something stopped us.</h2>
+              <p className="mt-4 text-[16px] leading-relaxed text-muted">{inv.error}</p>
+              <button type="button" onClick={reset} className="mt-8 border border-[rgb(var(--tint))] px-6 py-3 text-[13px] font-semibold uppercase tracking-[0.12em] tint-text transition-colors hover:bg-[rgb(var(--tint))] hover:text-ink">Try again</button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
-
       <Footer />
     </div>
   );

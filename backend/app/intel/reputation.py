@@ -226,12 +226,11 @@ def check_openphish(url: str) -> RepResult:
 
 # ---------------- aggregate ----------------
 def check_all(parsed: ParsedUrl, trusted: bool, use_virustotal: bool) -> list[RepResult]:
-    """Run every provider concurrently. `trusted` domains skip VT/URLhaus to save quota."""
+    """Run every provider concurrently. `trusted` domains skip VirusTotal to save its small quota."""
 
     url = parsed.url
-    jobs = [lambda: check_safe_browsing(url), lambda: check_openphish(url)]
+    jobs = [lambda: check_safe_browsing(url), lambda: check_openphish(url), lambda: check_urlhaus(url, parsed.host_ascii)]
     if not trusted:
-        jobs.append(lambda: check_urlhaus(url, parsed.host_ascii))
         if use_virustotal:
             jobs.append(lambda: check_virustotal(parsed.host_ascii))
     with ThreadPoolExecutor(max_workers=len(jobs)) as pool:

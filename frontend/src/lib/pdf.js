@@ -1,202 +1,138 @@
 import { jsPDF } from "jspdf";
-import { getRiskConfig } from "./risk";
-import { formatModelName } from "./reasoningModel";
 import { MODE_CONFIG } from "./modes";
+import { getVerdict } from "./verdict";
+import { defang } from "./format";
 
-const PAGE_MARGIN = 48;
-const PAGE_WIDTH = 595.28; // A4 pt
-const PAGE_HEIGHT = 841.89; // A4 pt
-const CONTENT_WIDTH = PAGE_WIDTH - PAGE_MARGIN * 2;
-
-// Always black-on-white and independent of the app's current theme, so the
-// report stays readable when printed in black & white.
+const M = 48;
+const W = 595.28;
+const H = 841.89;
+const CW = W - M * 2;
 const INK = "#0f172a";
 const MUTED = "#475569";
 const RULE = "#cbd5e1";
 
-function newCursor() {
-  return { y: PAGE_MARGIN };
-}
-
-function ensureSpace(doc, cursor, needed) {
-  if (cursor.y + needed > PAGE_HEIGHT - PAGE_MARGIN) {
-    doc.addPage();
-    cursor.y = PAGE_MARGIN;
-  }
-}
-
-function drawSectionHeading(doc, cursor, text) {
-  ensureSpace(doc, cursor, 26);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(INK);
-  doc.text(text.toUpperCase(), PAGE_MARGIN, cursor.y);
-  cursor.y += 6;
-  doc.setDrawColor(RULE);
-  doc.setLineWidth(0.75);
-  doc.line(PAGE_MARGIN, cursor.y, PAGE_WIDTH - PAGE_MARGIN, cursor.y);
-  cursor.y += 16;
-}
-
-function drawKeyValueRow(doc, cursor, label, value, valueOffset = 130) {
-  if (!value) return;
-  ensureSpace(doc, cursor, 16);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.5);
-  doc.setTextColor(MUTED);
-  const labelLines = doc.splitTextToSize(label.toUpperCase(), valueOffset - 10);
-  doc.text(labelLines, PAGE_MARGIN, cursor.y);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  doc.setTextColor(INK);
-  const lines = doc.splitTextToSize(String(value), CONTENT_WIDTH - valueOffset);
-  doc.text(lines, PAGE_MARGIN + valueOffset, cursor.y);
-  cursor.y += Math.max(14, lines.length * 13, labelLines.length * 12) + 4;
-}
-
-function drawParagraph(doc, cursor, text, { size = 10.5, color = INK, gap = 16 } = {}) {
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(size);
-  doc.setTextColor(color);
-  const lines = doc.splitTextToSize(text, CONTENT_WIDTH);
-  ensureSpace(doc, cursor, lines.length * (size + 3.5) + gap);
-  doc.text(lines, PAGE_MARGIN, cursor.y);
-  cursor.y += lines.length * (size + 3.5) + gap;
-}
-
-function drawBulletList(doc, cursor, items) {
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  doc.setTextColor(INK);
-
-  for (const item of items) {
-    const lines = doc.splitTextToSize(item, CONTENT_WIDTH - 16);
-    ensureSpace(doc, cursor, lines.length * 14 + 6);
-    doc.setFillColor(INK);
-    doc.circle(PAGE_MARGIN + 3, cursor.y - 3, 1.4, "F");
-    doc.text(lines, PAGE_MARGIN + 14, cursor.y);
-    cursor.y += lines.length * 14 + 6;
-  }
-}
-
-/**
- * Builds a print-friendly PDF summary from the CURRENT investigation
- * result only — every value below is read from the real API response and
- * the real submission the user made. Nothing here is hardcoded.
- */
-export function generateSummaryPdf({ result, submission, mode, localRef, generatedAt, latencyMs }) {
+/** Black-on-white, printable report built only from the real API response. */
+export function generateReportPdf(meta) {
+  const { result, mode, ref, at, latencyMs, input } = meta;
+  const v = getVerdict(result.verdict);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const cursor = newCursor();
-  const risk = getRiskConfig(result.risk_level);
+  const cur = { y: M };
 
-  // Title block
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(INK);
-  doc.text("SCAMSHIELD", PAGE_MARGIN, cursor.y);
-  cursor.y += 20;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  doc.setTextColor(MUTED);
-  doc.text("Scam & Phishing Investigation Summary", PAGE_MARGIN, cursor.y);
-  cursor.y += 18;
-
-  doc.setDrawColor(RULE);
-  doc.setLineWidth(1);
-  doc.line(PAGE_MARGIN, cursor.y, PAGE_WIDTH - PAGE_MARGIN, cursor.y);
-  cursor.y += 26;
-
-  // INVESTIGATION
-  drawSectionHeading(doc, cursor, "Investigation");
-  drawKeyValueRow(doc, cursor, "Local Reference", localRef);
-  drawKeyValueRow(doc, cursor, "Generated", generatedAt.toLocaleString());
-  drawKeyValueRow(doc, cursor, "Input Mode", MODE_CONFIG[mode]?.label || mode);
-  drawKeyValueRow(doc, cursor, "Claimed Organization", submission.claimedOrganization || "Not provided");
-  if (latencyMs != null) drawKeyValueRow(doc, cursor, "Backend Response Time", `${latencyMs} ms`);
-  if (result.reasoning_model) {
-    drawKeyValueRow(doc, cursor, "Reasoning Engine", formatModelName(result.reasoning_model));
-  }
-  cursor.y += 6;
-
-  // Analyzed content
-  const analyzedText =
-    mode === "text"
-      ? submission.message
-      : mode === "qr_code"
-      ? result.decoded_text
-        ? `Decoded QR content: ${result.decoded_text}`
-        : null
-      : result.extracted_text
-      ? `OCR-extracted text: ${result.extracted_text}`
-      : "No readable text was extracted from the uploaded image.";
-
-  if (analyzedText) {
-    drawSectionHeading(doc, cursor, "Analyzed Content");
-    drawParagraph(doc, cursor, analyzedText, { size: 9.5, color: MUTED });
-  }
-
-  // VERDICT
-  drawSectionHeading(doc, cursor, "Verdict");
-  drawKeyValueRow(doc, cursor, "Risk Level", risk.label.toUpperCase());
-  drawKeyValueRow(doc, cursor, "Risk Score", `${result.risk_score} / 100`);
-  drawKeyValueRow(
-    doc,
-    cursor,
-    "Confidence",
-    `${Math.round(Math.max(0, Math.min(1, result.confidence)) * 100)}%`
-  );
-  cursor.y += 6;
-
-  // WHY THIS SCORE? — the real deterministic score_breakdown from the API.
-  if (result.score_breakdown?.length) {
-    drawSectionHeading(doc, cursor, "Why This Score?");
-    for (const item of result.score_breakdown) {
-      drawKeyValueRow(doc, cursor, item.signal, `+${item.points}`, 260);
+  const need = (n) => {
+    if (cur.y + n > H - M - 20) {
+      doc.addPage();
+      cur.y = M;
     }
-    ensureSpace(doc, cursor, 20);
-    doc.setDrawColor(RULE);
-    doc.setLineWidth(0.5);
-    doc.line(PAGE_MARGIN, cursor.y, PAGE_MARGIN + 260, cursor.y);
-    cursor.y += 12;
-    drawKeyValueRow(doc, cursor, "Total", `${result.risk_score} / 100`, 260);
-    cursor.y += 6;
+  };
+  const heading = (t) => {
+    need(36);
+    cur.y += 8;
+    doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(INK).text(t.toUpperCase(), M, cur.y);
+    cur.y += 6;
+    doc.setDrawColor(RULE).setLineWidth(0.75).line(M, cur.y, W - M, cur.y);
+    cur.y += 16;
+  };
+  const para = (t, { size = 10.5, color = INK, font = "normal", gap = 8 } = {}) => {
+    doc.setFont("helvetica", font).setFontSize(size).setTextColor(color);
+    const lines = doc.splitTextToSize(String(t), CW);
+    need(lines.length * (size + 3.5) + gap);
+    doc.text(lines, M, cur.y);
+    cur.y += lines.length * (size + 3.5) + gap;
+  };
+  const row = (k, val) => {
+    if (val == null || val === "") return;
+    doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(MUTED);
+    const lines = doc.splitTextToSize(String(val), CW - 140);
+    need(Math.max(14, lines.length * 13) + 4);
+    doc.text(k.toUpperCase(), M, cur.y);
+    doc.setFont("helvetica", "normal").setFontSize(10.5).setTextColor(INK).text(lines, M + 140, cur.y);
+    cur.y += Math.max(14, lines.length * 13) + 4;
+  };
+  const bullets = (items) => {
+    for (const item of items) {
+      doc.setFont("helvetica", "normal").setFontSize(10.5).setTextColor(INK);
+      const lines = doc.splitTextToSize(String(item), CW - 16);
+      need(lines.length * 14 + 6);
+      doc.setFillColor(INK).circle(M + 3, cur.y - 3, 1.4, "F");
+      doc.text(lines, M + 14, cur.y);
+      cur.y += lines.length * 14 + 6;
+    }
+  };
+
+  doc.setFont("helvetica", "bold").setFontSize(20).setTextColor(INK).text("SCAMSHIELD", M, cur.y);
+  cur.y += 18;
+  doc.setFont("helvetica", "normal").setFontSize(12).setTextColor(MUTED).text("Scam & phishing investigation report", M, cur.y);
+  cur.y += 12;
+  doc.setDrawColor(INK).setLineWidth(1.2).line(M, cur.y, W - M, cur.y);
+  cur.y += 8;
+
+  heading("Verdict");
+  doc.setFont("helvetica", "bold").setFontSize(26).setTextColor(INK).text(v.word.toUpperCase(), M, cur.y + 8);
+  cur.y += 26;
+  para(`${v.headline} ${v.blurb}`, { color: MUTED });
+  if (result.verdict !== "COULD_NOT_VERIFY") row("Risk score", `${result.risk_score} / 100`);
+  row("Risk level", result.risk_level);
+  row("Confidence", `${Math.round(result.confidence * 100)}%  (${Math.round((result.confidence_factors?.coverage ?? 0) * 100)}% of checks completed, ${Math.round((result.confidence_factors?.agreement ?? 0) * 100)}% of strong evidence agrees)`);
+
+  heading("Investigation");
+  row("Reference", ref);
+  row("Generated", at.toLocaleString());
+  row("Input type", MODE_CONFIG[mode].label);
+  row("Response time", `${(latencyMs / 1000).toFixed(1)} s`);
+  row("Explanation by", result.reasoning_model || "built-in rules");
+  row("Engine", `scoring weights v${result.weights_version}`);
+
+  const content = mode === "text" ? input.message : result.extracted_text || result.decoded_text;
+  if (content) {
+    heading(mode === "text" ? "Message analysed" : mode === "qr" ? "QR content" : "Text read from screenshot");
+    para(content, { size: 9.5, color: MUTED });
   }
 
-  // WHY THIS WAS FLAGGED
-  if (result.reasons?.length) {
-    drawSectionHeading(doc, cursor, "Why This Was Flagged");
-    drawBulletList(doc, cursor, result.reasons);
-    cursor.y += 6;
+  heading("Why this verdict");
+  bullets(result.reasons);
+
+  if (result.qr?.summary) {
+    heading("Payment details in the QR");
+    const s = result.qr.summary;
+    row("Payee", s.payee);
+    row("UPI address", s.vpa);
+    row("Amount", s.amount ? `INR ${s.amount}` : "Not preset");
+    row("Note", s.note);
   }
 
-  // RECOMMENDED ACTION
-  if (result.recommendation) {
-    drawSectionHeading(doc, cursor, "Recommended Action");
-    drawParagraph(doc, cursor, result.recommendation);
+  if (result.urls.length) {
+    heading("Links inspected");
+    result.urls.forEach((u, i) => {
+      need(60);
+      para(`${i + 1}. ${defang(u.url)}`, { font: "bold", gap: 4 });
+      row("Verdict", `${getVerdict(u.verdict).word}${u.score != null ? ` (score ${u.score})` : ""}`);
+      row("Trust", u.trust.brand ? `${u.trust.tier} - ${u.trust.brand}` : u.trust.tier);
+      if (u.domain_age_days != null) row("Domain age", `${u.domain_age_days} days`);
+      if (u.reachability) row("Reachability", `${u.reachability.outcome}${u.reachability.status ? ` (${u.reachability.status})` : ""}, ${Math.max(0, (u.reachability.chain?.length || 1) - 1)} redirect(s)`);
+      if (u.reputation?.length) row("Threat feeds", u.reputation.map((p) => `${p.provider}: ${p.status}`).join("; "));
+      if (u.destination) row("Final destination", defang(u.destination.url));
+      cur.y += 6;
+    });
   }
 
-  // TECHNICAL EVIDENCE
-  if (result.evidence?.length) {
-    drawSectionHeading(doc, cursor, "Technical Evidence");
-    drawBulletList(doc, cursor, result.evidence);
+  if (result.score_breakdown?.length) {
+    heading("Score breakdown");
+    result.score_breakdown.forEach((r) => row(r.signal, `${r.points > 0 ? "+" : ""}${r.points}`));
   }
 
-  // Footer disclaimer on every page
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
+  heading("What to do next");
+  para(result.recommendation);
+  if (result.verdict !== "SAFE") para("Report cyber fraud at cybercrime.gov.in or call helpline 1930.", { color: MUTED });
+
+  heading("Technical evidence");
+  bullets(result.evidence);
+
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(MUTED);
-    doc.text(
-      "Generated locally by the ScamShield web app from a live backend investigation. Not stored on any server.",
-      PAGE_MARGIN,
-      PAGE_HEIGHT - 28
-    );
-    doc.text(`Page ${i} of ${pageCount}`, PAGE_WIDTH - PAGE_MARGIN - 60, PAGE_HEIGHT - 28);
+    doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(MUTED);
+    doc.text("Automated assessment, not a guarantee. Links are shown defanged. Generated locally; nothing is stored on a server.", M, H - 26);
+    doc.text(`Page ${i} of ${pages}`, W - M - 56, H - 26);
   }
-
-  doc.save(`scamshield-report-${localRef}.pdf`);
+  doc.save(`scamshield-${ref}.pdf`);
 }

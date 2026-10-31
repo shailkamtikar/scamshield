@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     # Feature switches (all default on).
     enable_network_intel: bool = True
     enable_page_inspection: bool = True
+    enable_fetch: bool = True  # connect to links to follow redirects / check they exist
     enable_vision: bool = True
 
     @field_validator("cors_origins", mode="before")
