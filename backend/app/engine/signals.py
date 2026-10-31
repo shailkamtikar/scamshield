@@ -49,6 +49,7 @@ CATALOG: dict[str, tuple[str, int, str, str]] = {
     "FORM_CROSS_DOMAIN": ("risk", 35, "strong", "Form sends data to a different domain"),
     "BRAND_MISMATCH_PAGE": ("risk", 45, "strong", "Page pretends to be a brand it does not belong to"),
     "APK_DOWNLOAD": ("risk", 30, "moderate", "Page pushes an app (APK) download"),
+    "RISKY_FILE_LINK": ("risk", 35, "moderate", "Link downloads an executable or app file"),
     "PAGE_PARKED_OR_EMPTY": ("risk", 4, "weak", "Page is empty or parked"),
     # --- message language ---
     "URGENCY": ("risk", 10, "weak", "Urgency language"),

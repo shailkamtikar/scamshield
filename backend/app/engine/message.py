@@ -1,0 +1,218 @@
+"""
+Scam-language analysis for message text plus entity extraction.
+
+Pure rules (word-boundary regexes, negation handling, Hinglish) so every
+result is explainable. No network access.
+"""
+
+import re
+import unicodedata
+from dataclasses import dataclass, field
+
+from app.engine.signals import Signal, make
+from app.intel.registry_data import UPI_HANDLES
+from app.intel.trust import GENERIC_BRAND_WORDS, brand_tokens
+
+ZERO_WIDTH = dict.fromkeys(map(ord, "​‌‍⁠﻿­"), None)
+_LEET = str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "@": "a", "$": "s"})
+
+NEGATION = re.compile(
+    r"(?:never|do not|don'?t|dont|not to|should not|shouldn'?t|will not|won'?t|wont|"
+    r"no one|nobody|avoid|beware|kabhi nahi|mat)\b(?:\W+\w+){0,6}?\W+$",
+    re.I,
+)
+
+
+def normalize(text: str) -> str:
+    text = unicodedata.normalize("NFKC", text).translate(ZERO_WIDTH)
+    return text.lower()
+
+
+def _deleet_words(text: str) -> str:
+    """Undo number-for-letter swaps inside words (0TP -> otp, verlfy -> verify)."""
+    return re.sub(r"\b\w*[a-z]\w*\b", lambda m: m.group(0).translate(_LEET) if re.search(r"[0-9@$]", m.group(0)) and re.search(r"[a-z]", m.group(0)) else m.group(0), text)
+
+
+PATTERNS: dict[str, list[str]] = {
+    "URGENCY": [
+        r"\burgent(?:ly)?\b", r"\bimmediately\b", r"\bact now\b", r"\bright away\b", r"\basap\b",
+        r"\bwithin \d+\s*(?:hours?|hrs?|minutes?|mins?|days?)\b", r"\blast chance\b",
+        r"\bexpires? (?:today|soon|tonight)\b", r"\btoday only\b", r"\bfinal (?:notice|warning|reminder)\b",
+        r"\babhi\b", r"\bturant\b", r"\bjaldi\b", r"\bat once\b", r"\bwithout delay\b",
+    ],
+    "FEAR_OR_THREAT": [
+        r"\b(?:suspended|blocked|deactivated|terminated|disconnected|frozen|locked|restricted|banned)\b",
+        r"\bwill be (?:blocked|suspended|closed|disconnected|deactivated|terminated|cancelled|canceled)\b",
+        r"\blegal action\b", r"\bpenalt(?:y|ies)\b", r"\bfir\b", r"\bcase (?:has been )?(?:filed|registered)\b",
+        r"\bband ho\s*(?:jayega|jaega|jayegi)\b", r"\bbloc?k ho\b", r"\baccount (?:closed|closure)\b",
+    ],
+    "ARREST_THREAT": [
+        r"\barrest(?:ed)?\b", r"\bdigital arrest\b", r"\bwarrant\b", r"\b(?:cbi|narcotics|ncb|customs officer|cyber ?crime branch)\b",
+        r"\bmoney laundering\b", r"\bparcel (?:contains|has been (?:seized|intercepted))\b",
+        r"\b(?:police|court) (?:notice|summon|case)\b", r"\bsupreme court\b",
+    ],
+    "CREDENTIAL_REQUEST": [
+        r"\b(?:share|send|enter|provide|confirm|give|tell|submit|reply(?: with)?|forward|update|verify|type|dictate|read out)\b"
+        r"(?:\W+\w+){0,4}?\W+(?:otp|one[- ]time[- ]password|pin|upi pin|mpin|cvv|password|passcode|card number|"
+        r"card details|aadhaa?r(?: number)?|pan(?: number| card)?|account number|net ?banking|verification code|login details|atm pin|expiry)\b",
+        r"\b(?:otp|cvv|pin|password)\b\W+(?:is )?(?:required|needed|mandatory)\b",
+        r"\bkindly (?:share|send|provide) .{0,20}(?:otp|pin|password|cvv)\b",
+    ],
+    "FINANCIAL_PRESSURE": [
+        r"\brefund\b", r"\bcash ?back\b", r"\bprize\b", r"\breward points?\b", r"\bprocessing fee\b",
+        r"\bclaim (?:your|the|now)\b", r"\bbonus\b", r"\bpay (?:a |the )?(?:small )?(?:fee|charges?|fine|amount)\b",
+        r"\btransfer (?:the )?(?:amount|money|funds)\b", r"\bclearance (?:fee|charges?)\b", r"\bpending (?:amount|dues?|bill)\b",
+        r"\b(?:rs\.?|inr|₹)\s?\d[\d,]*\b.{0,20}\b(?:credited|reward|won|prize|refund)\b",
+    ],
+    "PRIZE_LOTTERY": [
+        r"\blotter(?:y|ies)\b", r"\blucky draw\b", r"\byou(?:'ve| have)? (?:been selected|won)\b",
+        r"\bcongratulations\b.{0,60}\b(?:won|winner|selected|prize|gift)\b", r"\bkbc\b", r"\bwinner\b",
+    ],
+    "KYC_UPDATE": [
+        r"\bkyc\b", r"\bre-?kyc\b", r"\bupdate (?:your )?(?:pan|aadhaa?r|details|account|profile|mobile number|bank)\b",
+        r"\b(?:pan|aadhaa?r) (?:is )?(?:not linked|expired|not updated|will be)\b", r"\bverify your (?:account|identity|details)\b",
+        r"\bcomplete (?:your )?(?:kyc|verification)\b",
+    ],
+    "JOB_TASK_SCAM": [
+        r"\bwork from home\b", r"\bpart[- ]?time (?:job|work)\b", r"\bearn (?:rs\.?|inr|₹)?\s?\d[\d,]*\s*(?:per|a|/)\s*(?:day|week|hour|daily)\b",
+        r"\b(?:like|subscribe) (?:and )?(?:subscribe|like|share)\b", r"\bsimple tasks?\b", r"\bdata entry job\b",
+        r"\bsalary (?:rs\.?|inr|₹)?\s?\d", r"\bhr (?:manager|team)\b.{0,60}\b(?:telegram|whatsapp)\b", r"\bhiring\b.{0,60}\b(?:whatsapp|telegram)\b",
+        r"\bjoin (?:our )?(?:telegram|whatsapp) (?:group|channel)\b",
+    ],
+    "REMOTE_ACCESS_APP": [
+        r"\banydesk\b", r"\bteam ?viewer\b", r"\bquick ?support\b", r"\brustdesk\b", r"\bairdroid\b", r"\bultraviewer\b",
+    ],
+    "APK_INSTALL": [
+        r"\b\w+\.apk\b", r"\b(?:download|install) (?:the |our )?(?:\w+ )?(?:app|apk)\b", r"\bupdate (?:the )?app from (?:this )?link\b",
+    ],
+    "INVESTMENT_SCAM": [
+        r"\bguaranteed (?:returns?|profit)\b", r"\bdouble your (?:money|investment)\b", r"\b\d{2,3}%\s*(?:returns?|profit)\b",
+        r"\b(?:vip|premium) (?:trading|stock|crypto) (?:group|tips|signals?)\b", r"\bipo allotment\b.{0,40}\b(?:group|link)\b",
+        r"\bcrypto (?:trading|investment) (?:platform|group)\b", r"\binsider tips?\b",
+    ],
+    "UPI_COLLECT_SCAM": [
+        r"\bscan (?:this |the )?(?:qr|barcode)(?: code)?\b.{0,40}\b(?:receive|get|credit|refund|claim)\b",
+        r"\b(?:receive|get) (?:the )?money\b.{0,40}\b(?:scan|pin|approve|accept)\b",
+        r"\bcollect request\b", r"\b(?:approve|accept) (?:the )?(?:upi |payment )?request\b.{0,40}\b(?:receive|refund|get)\b",
+        r"\benter (?:your )?upi pin\b.{0,40}\b(?:receive|get|credit|refund)\b",
+    ],
+    "SUSPICIOUS_CTA": [
+        r"\bclick (?:here|the link|below|on the link|this link)\b", r"\btap (?:here|the link|below)\b", r"\bopen (?:the |this )?link\b",
+        r"\bverify now\b", r"\bconfirm now\b", r"\blogin now\b", r"\bupdate now\b", r"\bdownload (?:now|here)\b",
+        r"\bvisit (?:the )?(?:link|website|site)\b", r"\bfollow (?:the )?link\b",
+    ],
+}
+
+
+# Additional India-specific scam wording (delivery fees, utility cut-offs, loan bait).
+for _sid, _extra in {
+    "FEAR_OR_THREAT": [
+        r"\b(?:power|electricity|connection|supply|service)\b.{0,40}\bwill be (?:cut|disconnected|stopped|blocked)\b",
+        r"\b(?:power|electricity) cut\b", r"\bdisconnect(?:ion|ed)?\b",
+    ],
+    "FINANCIAL_PRESSURE": [
+        r"\b(?:re-?delivery|delivery|customs|clearance) (?:fee|charges?)\b", r"\bheld at customs\b", r"\bpackage is held\b",
+        r"\bparcel (?:could not|couldn'?t|cannot) be delivered\b", r"\bpre-?approved loan\b", r"\binstant (?:cash|loan)\b",
+        r"\bwithout (?:any )?documents\b",
+    ],
+    "CREDENTIAL_REQUEST": [
+        r"\b(?:submit|enter|share|provide|update|send)\b\W+(?:\w+\W+){0,3}(?:bank|account|card) details\b",
+    ],
+    "SUSPICIOUS_CTA": [
+        r"\b(?:contact|call|message|msg|ping)\b.{0,30}\b(?:whatsapp|telegram)\b", r"\bwhatsapp\b\W+\+?\d",
+    ],
+}.items():
+    PATTERNS[_sid].extend(_extra)
+
+PROMPT_INJECTION = re.compile(
+    r"(?:ignore|disregard|forget)\W+(?:all\W+)?(?:the\W+)?(?:previous|prior|above|earlier)\W+(?:instructions?|rules?|prompts?)|"
+    r"system prompt|you are now\b|mark (?:this|it) as safe|say (?:that )?(?:this|it) (?:is )?(?:safe|legit)|"
+    r"respond with (?:only )?safe|<\s*/?\s*(?:system|assistant)\s*>|\bjailbreak\b",
+    re.I,
+)
+
+GENUINE_ALERT = [
+    r"\b(?:debited|credited)\b.{0,30}\b(?:rs\.?|inr|₹)\s?\d",
+    r"\b(?:rs\.?|inr|₹)\s?\d[\d,.]*\s*(?:has been )?(?:debited|credited|spent|withdrawn)\b",
+    r"\bavl\.? ?bal(?:ance)?\b", r"\ba/?c\s*(?:no\.?)?\s*(?:x{2,}|\*{2,}|\d{2,4}x*)\d*\b",
+    r"\byour (?:otp|one[- ]time[- ]password) (?:is|for)\b.{0,40}\d{4,8}",
+    r"\b(?:do not|don'?t|never) share (?:this |the |your )?(?:otp|pin|cvv|password)\b",
+    r"\btxn\b|\btransaction (?:id|ref)\b|\bupi ref(?:erence)?\b|\brrn\b",
+]
+
+PHONE_RE = re.compile(r"(?<!\d)(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}(?!\d)")
+TOLLFREE_RE = re.compile(r"(?<!\d)1800[\s-]?\d{3}[\s-]?\d{3,4}(?!\d)")
+EMAIL_RE = re.compile(r"[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}", re.I)
+UPI_RE = re.compile(r"(?<![\w.])([a-z0-9._-]{2,}@(" + "|".join(sorted(UPI_HANDLES, key=len, reverse=True)) + r"))(?![\w.])", re.I)
+IFSC_RE = re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b")
+
+
+@dataclass
+class MessageAnalysis:
+    signals: list[Signal] = field(default_factory=list)
+    entities: dict = field(default_factory=dict)
+    mentioned_brands: list = field(default_factory=list)  # Brand objects
+    genuine_alert: bool = False
+
+
+def extract_entities(text: str) -> dict:
+    phones = sorted({re.sub(r"[\s-]", "", m.group(0)) for m in PHONE_RE.finditer(text)} | {re.sub(r"[\s-]", "", m.group(0)) for m in TOLLFREE_RE.finditer(text)})
+    upis = sorted({m.group(1).lower() for m in UPI_RE.finditer(text)})
+    emails = sorted({m.group(0).lower() for m in EMAIL_RE.finditer(text) if m.group(0).lower() not in upis})
+    return {"phones": phones, "emails": emails, "upi_ids": upis, "ifsc": sorted(set(IFSC_RE.findall(text)))}
+
+
+def mentioned_brands(text: str, extra: tuple[str, ...] = ()):
+    low = normalize(text)
+    found, seen = [], set()
+    for token, brand in brand_tokens().items():
+        if len(token) < 3 or token in GENERIC_BRAND_WORDS:
+            continue
+        if re.search(rf"\b{re.escape(token)}\b", low) and brand.name not in seen:
+            seen.add(brand.name)
+            found.append(brand)
+    return found
+
+
+def analyze(text: str, claimed: str | None = None, source: str = "web") -> MessageAnalysis:
+    result = MessageAnalysis()
+    low = _deleet_words(normalize(text))
+    result.entities = extract_entities(text)
+
+    # genuine bank/OTP alert template (needs >= 2 independent matches)
+    genuine_hits = sum(1 for p in GENUINE_ALERT if re.search(p, low))
+    result.genuine_alert = genuine_hits >= 2
+
+    def add(sid: str, detail: str):
+        result.signals.append(make(sid, detail, "message", None))
+
+    for sid, patterns in PATTERNS.items():
+        for pattern in patterns:
+            for m in re.finditer(pattern, low):
+                if sid == "CREDENTIAL_REQUEST":
+                    before = low[max(0, m.start() - 70) : m.start()]
+                    if NEGATION.search(before + low[m.start() : m.start() + 1]) or NEGATION.search(before):
+                        continue
+                phrase = re.sub(r"\s+", " ", m.group(0))[:60]
+                label = sid.replace("_", " ").lower()
+                add(sid, f"Message wording ({label}): \"{phrase}\".")
+                break
+            if any(s.id == sid for s in result.signals):
+                break
+
+    if PROMPT_INJECTION.search(low):
+        add("PROMPT_INJECTION", "The text contains instructions aimed at the analysis system.")
+
+    if result.entities["phones"] and any(s.id in {"URGENCY", "FEAR_OR_THREAT", "ARREST_THREAT", "KYC_UPDATE"} for s in result.signals):
+        if re.search(r"\b(?:call|contact|whatsapp|dial|helpline|customer care|speak)\b", low):
+            add("PHONE_CALL_TO_ACTION", f"Asks you to call {result.entities['phones'][0]} under pressure.")
+
+    if re.search(r"\bsbi\b|\bhdfc\b|\bicici\b|\baxis\b|\bkotak\b|\bpnb\b|\bbank\b", low) and re.match(r"^\+?\d{10,}$", (source or "").replace(" ", "")):
+        add("SENDER_PERSONAL_NUMBER", "Claims to come from a bank but was sent from an ordinary phone number.")
+
+    result.mentioned_brands = mentioned_brands(text)
+
+    if result.genuine_alert and not any(s.id in {"CREDENTIAL_REQUEST", "FEAR_OR_THREAT", "ARREST_THREAT", "UPI_COLLECT_SCAM", "PRIZE_LOTTERY"} for s in result.signals):
+        result.signals.append(make("GENUINE_ALERT_PATTERN", "The wording matches a standard bank / OTP alert template.", "message", None))
+
+    return result

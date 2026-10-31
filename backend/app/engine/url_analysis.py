@@ -30,6 +30,8 @@ class UrlReport:
     domain_age_days: int | None = None
     registrar: str | None = None
     destination: "UrlReport | None" = None
+    checks: dict = field(default_factory=dict)
+    risk_points: int = 0
     _signals: list[Signal] = field(default_factory=list, repr=False)
 
     def to_dict(self) -> dict:
@@ -45,6 +47,8 @@ def analyze_url(
     extra_brands: tuple[str, ...] = (),
     depth: int = 0,
     inspect_page: bool = True,
+    expected_brands: tuple = (),
+    risky_context: bool = False,
 ) -> UrlReport:
     network = settings.enable_network_intel if network is None else network
     info = trust.classify(parsed)
@@ -55,6 +59,12 @@ def analyze_url(
         signals.append(make("TRUSTED_OFFICIAL", f"{parsed.registrable} is the official domain of {info.brand}.", "trust", t))
     elif info.tier == "POPULAR":
         signals.append(make("TRUSTED_POPULAR", f"{parsed.registrable} is a well-known site (top {info.rank}).", "trust", t))
+
+    if expected_brands and risky_context and info.tier == "UNKNOWN":
+        owned = {d.lower() for b in expected_brands for d in b.domains}
+        if parsed.registrable.lower() not in owned and not info.shortener:
+            names = ", ".join(sorted({b.name for b in expected_brands})[:2])
+            signals.append(make("BRAND_MISMATCH_LINK", f"The message talks about {names}, but the link goes to {parsed.registrable}.", "message", t))
 
     checks = {"lexical": "done", "trust": "done"}
     rep_results: list[reputation.RepResult] = []
@@ -119,7 +129,7 @@ def analyze_url(
             sig_id = "SHORTENER" if info.shortener else "REDIRECT_TO_OTHER_DOMAIN"
             if not any(s.id == sig_id for s in signals):
                 signals.append(make(sig_id, f"The link redirects to {final.host_ascii}.", "net", t))
-            destination = analyze_url(final, network=network, extra_brands=extra_brands, depth=1, inspect_page=True)
+            destination = analyze_url(final, network=network, extra_brands=extra_brands, depth=1, inspect_page=True, expected_brands=expected_brands, risky_context=risky_context)
 
     tier = info.tier
     outcome = fetch_result.outcome if fetch_result else None
@@ -158,6 +168,8 @@ def analyze_url(
         domain_age_days=domain_facts.age_days if domain_facts else None,
         registrar=domain_facts.registrar if domain_facts else None,
         destination=destination,
+        checks=checks,
+        risk_points=assessment.risk_points,
         _signals=assessment.signals,
     )
     return report

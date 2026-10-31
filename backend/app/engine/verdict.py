@@ -94,6 +94,7 @@ def assess_url(
 
 # ---------------------------------------------------------------- confidence
 CHECK_WEIGHTS = {
+    "message_rules": 2.0, "qr_payload": 2.0,
     "lexical": 2.0, "trust": 2.0, "google_safe_browsing": 2.0, "openphish": 1.0,
     "urlhaus": 1.0, "virustotal": 1.0, "reachability": 2.0, "domain_age": 1.0, "page": 1.0,
 }

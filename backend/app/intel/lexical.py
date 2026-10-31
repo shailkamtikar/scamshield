@@ -121,6 +121,9 @@ def analyze(parsed: ParsedUrl, trust: TrustInfo, extra_brands: tuple[str, ...] =
     if trust.tier == "OFFICIAL":
         return signals
 
+    if re.search(r"\.(exe|apk|msi|bat|scr|jar|ps1|vbs|lnk|iso|dmg|sh|bin|zip|rar|7z|cmd|hta|dll)$", parsed.path.lower()):
+        add("RISKY_FILE_LINK", f"The link downloads a file ({parsed.path.rsplit('/', 1)[-1]}) rather than showing a web page.")
+
     if parsed.scheme == "http" and parsed.has_scheme:
         add("NO_HTTPS", "The link does not use HTTPS.")
     if trust.shortener:
@@ -192,7 +195,7 @@ def analyze(parsed: ParsedUrl, trust: TrustInfo, extra_brands: tuple[str, ...] =
 
     # brand name hiding in subdomain / path of someone else's domain
     if not brand_found or brand_found[1] != "lookalike":
-        scan_words = sub_words + (path_words if (trust.platform or admin_in_label or any(w in ADMIN_WORDS for w in path_words)) else [])
+        scan_words = sub_words + path_words
         for word in scan_words:
             brand, kind = _match_brand(word, tokens, allow_substring=False)
             if brand is not None and word not in GENERIC_BRAND_WORDS and (len(word) >= 3 or word == 'fb'):
