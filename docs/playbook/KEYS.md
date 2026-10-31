@@ -16,7 +16,7 @@ OpenPhish needs no key (public community feed), so 1.1 can still start with it i
 3. Open https://console.cloud.google.com/apis/credentials -> **+ Create credentials** -> **API key**. Copy the key.
 4. Optional but recommended: click the key -> **API restrictions** -> Restrict key -> select the Safe Browsing API only -> Save.
 5. Put it in `backend/.env` as `SAFE_BROWSING_API_KEY=...`.
-If Google demands billing/credit card to enable it, stop and skip this key: the engine works without it (URLhaus, OpenPhish and VirusTotal still run), with slightly lower coverage. The backend will call the v5 endpoint `https://safebrowsing.googleapis.com/v5/hashes:search` (or `urls:search`) with the key as a `key` query parameter.
+If Google demands billing/credit card to enable it, stop and skip this key: the engine works without it (URLhaus, OpenPhish and VirusTotal still run), with slightly lower coverage. Verified in testing: your key works with the v4 Lookup API (`POST https://safebrowsing.googleapis.com/v4/threatMatches:find?key=...`, JSON), which correctly flags Google's official test pages. The v5 endpoint answered only in a binary format, so the backend uses v4.
 
 **VirusTotal API key** (free: about 4 requests/min, 500/day)
 1. Sign up at https://www.virustotal.com (free account) and confirm your email.
