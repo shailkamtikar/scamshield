@@ -7,10 +7,12 @@ Accuracy report for the SMS benchmark (static: no network, no Gemini).
 import argparse
 import csv
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 
 from app.engine.analysis import Case, investigate_sync
+from app.engine.explain import explain
 
 ROOT = Path(__file__).resolve().parents[2]
 FLAGGED = {"SUSPICIOUS", "DANGEROUS"}
@@ -20,14 +22,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--show-errors", type=int, default=0)
     ap.add_argument("--live", action="store_true")
+    ap.add_argument("--llm", action="store_true", help="include the Gemini second opinion (the real product path)")
     ap.add_argument("--file", default="messages.csv", help="messages.csv (synthetic templates) or messages_handwritten.csv (independent)")
     args = ap.parse_args()
     rows = list(csv.DictReader(open(ROOT / "data" / "benchmark" / args.file, encoding="utf-8")))
-    tp = fn = fp = tn = 0
+    tp = fn = fp = tn = used = 0
     cat = defaultdict(lambda: [0, 0])
     errs = []
     for r in rows:
-        res = investigate_sync(Case(r["text"], network=args.live)).result
+        case = investigate_sync(Case(r["text"], network=args.live))
+        if args.llm:
+            explain(case)
+            used += bool(case.result["reasoning_model"])
+            time.sleep(4)  # stay inside the free-tier rate limit
+        res = case.result
         flagged = res["verdict"] in FLAGGED
         scam = r["label"] == "scam"
         ok = flagged == scam
@@ -38,7 +46,7 @@ def main():
         elif flagged: fp += 1; errs.append(("FALSE ALARM", r["text"], res["verdict"], res["risk_score"]))
         else: tn += 1
     det, fpr, acc = tp / max(tp + fn, 1), fp / max(fp + tn, 1), (tp + tn) / len(rows)
-    print(f"messages n={len(rows)} mode={'live' if args.live else 'static'}")
+    print(f"messages n={len(rows)} mode={'live' if args.live else 'static'} llm_answers={used}")
     print(f"detection {det:.1%} ({tp}/{tp+fn})  false positives {fpr:.1%} ({fp}/{fp+tn})  accuracy {acc:.1%}")
     for k, (a, b) in sorted(cat.items()):
         print(f"  {k:14} {a}/{b} {a/b:.0%}")

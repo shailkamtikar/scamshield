@@ -10,6 +10,16 @@ const VERDICTS = {
     blurb: "Nothing we checked raised a concern, but we don't know this site well, so stay a little careful.",
     badge: "No problems found",
   },
+  SAFE_PAYMENT: {
+    title: "This is a valid payment request",
+    blurb: "The QR code is a proper UPI request with nothing suspicious in it. We can't confirm who owns the account, so check the name before you pay.",
+    badge: "Valid payment QR",
+  },
+  SAFE_NO_LINKS: {
+    title: "We found no warning signs",
+    blurb: "Nothing in the wording looks like a scam, and there are no links to check.",
+    badge: "No warning signs",
+  },
   SUSPICIOUS: {
     title: "Be careful with this",
     blurb: "Some warning signs showed up. Check with the organisation directly before you do anything.",
@@ -28,7 +38,12 @@ const VERDICTS = {
 };
 
 export function getVerdict(verdict, assurance) {
-  if (verdict === "SAFE") return assurance === "verified" ? VERDICTS.SAFE_VERIFIED : VERDICTS.SAFE_UNKNOWN;
+  if (verdict === "SAFE") {
+    if (assurance === "verified") return VERDICTS.SAFE_VERIFIED;
+    if (assurance === "valid_payment") return VERDICTS.SAFE_PAYMENT;
+    if (assurance === "no_links") return VERDICTS.SAFE_NO_LINKS;
+    return VERDICTS.SAFE_UNKNOWN;
+  }
   return VERDICTS[verdict] || VERDICTS.COULD_NOT_VERIFY;
 }
 

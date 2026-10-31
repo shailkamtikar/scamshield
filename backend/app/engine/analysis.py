@@ -187,7 +187,12 @@ def step_decide(case: Case) -> Case:
     if verdict == "SAFE":
         tiers = {r.trust["tier"] for r in reports}
         verified = any(s.id in {"VERIFIED_SERVICE", "GENUINE_ALERT_PATTERN"} for s in case.signals) or (tiers and tiers <= {"OFFICIAL", "POPULAR"})
-        assurance = "verified" if verified else "no_problems_found"
+        if any(s.id == "UPI_VALID" for s in case.signals):
+            assurance = "valid_payment"
+        elif verified:
+            assurance = "verified"
+        else:
+            assurance = "no_problems_found" if reports else "no_links"
 
     dangerous_ids = ids | {s.id for r in reports for s in r._signals if s.polarity == "risk"}
     case.result = {

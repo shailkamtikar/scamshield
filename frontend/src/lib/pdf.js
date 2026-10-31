@@ -12,7 +12,7 @@ const MUTED = "#475569";
 const RULE = "#cbd5e1";
 
 /** Black-on-white, printable report built only from the real API response. */
-export function generateReportPdf(meta) {
+export function buildReportPdf(meta) {
   const { result, mode, ref, at, latencyMs, input } = meta;
   const v = getVerdict(result.verdict, result.assurance);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -136,5 +136,9 @@ export function generateReportPdf(meta) {
     doc.text("Automated assessment, not a guarantee. Links are shown defanged. Generated locally; nothing is stored on a server.", M, H - 26);
     doc.text(`Page ${i} of ${pages}`, W - M - 56, H - 26);
   }
-  doc.save(`scamshield-${ref}.pdf`);
+  return doc;
+}
+
+export function generateReportPdf(meta) {
+  buildReportPdf(meta).save(`scamshield-${meta.ref}.pdf`);
 }

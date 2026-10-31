@@ -1,0 +1,49 @@
+text,label,category
+"Your Delhivery shipment AWB 8827 is pending due to wrong pincode. Confirm address within 6 hrs: delhivery-address-confirm.com/track",scam,courier
+"Sir your CIBIL score dropped. Get free report and loan upto 5 lakh at 0% on cibil-free-report.online",scam,loan
+"IRCTC: Your ticket refund of Rs 1,842 failed. Re-enter your bank account and IFSC here to get it: irctc-refund-help.co",scam,refund
+"Team Zomato here, you have been chosen as a delivery partner rewards winner. Fill form for Rs 10,000 gift voucher https://zomato-rewards.site/form",scam,voucher
+"Beta I am in hospital, can't talk, send 15000 to this Google Pay number 9876012345 right now please",scam,family
+"This is Rakesh from TRAI. Your mobile number will be disconnected in 2 hours because of illegal SMS sent from it. Press 9 or call 7003214567",scam,trai
+"Your son has been arrested in a rape case. Pay 50000 immediately to this officer to settle it or he goes to jail",scam,family_arrest
+"आपका बिजली कनेक्शन आज रात काट दिया जाएगा। तुरंत इस नंबर पर कॉल करें 9812233445",scam,hindi_electricity
+"बधाई हो! आपने 5 लाख रुपये की लॉटरी जीत ली है। इनाम पाने के लिए प्रोसेसिंग शुल्क जमा करें",scam,hindi_lottery
+"प्रिय ग्राहक, आपका बैंक खाता ब्लॉक कर दिया गया है। केवाईसी अपडेट करने के लिए अपना ओटीपी भेजें",scam,hindi_kyc
+"Hello dear, are you interested in online review job? 20 minutes daily, earn 3k-8k. Reply YES on Telegram",scam,job
+"I accidentally sent Rs 7000 to your Paytm. Please return it to 8123456790, I am sending you the proof",scam,wrong_transfer
+"Your Microsoft 365 password expires today. Keep your current password here: https://ms365-keep-password.web.app/",scam,credential
+"Dear student, your scholarship of Rs 25,000 is approved. Pay registration fees of Rs 499 to release it. Link: nsp-scholarship-apply.in",scam,scholarship
+"HDFC: Your credit card limit increased. Activate within 24h or lose offer. Provide card number and CVV at hdfc-limit.top",scam,card
+"Your gas connection KYC is incomplete, connection will stop tomorrow. Download Indane KYC APK from indane-kyc.in/app.apk",scam,apk
+"Earn guaranteed daily income from crypto. Minimum investment Rs 1000 returns 300% in a week! Join: t.me/cryptokingprofit",scam,investment
+"Amazon: A purchase of iPhone 15 worth Rs 79,900 was made on your account. If not you, press 1 or call 18005550199 to cancel",scam,fake_purchase
+"Your Aadhaar is being misused for 3 SIM cards. Contact Mumbai crime branch at 9090901234 for verification today",scam,aadhaar
+"Greetings from Income Tax. PAN mismatch detected. Failing to update attracts Rs 10,000 fine. Do it now incometaxindia-update.com",scam,tax
+"Sir mera payment atak gaya hai, aap link pe click karke amount receive kar lijiye upi-receive-money.in",scam,hinglish_collect
+"Hi, your Jio number won 2GB free daily data for a year. Activate: jio-free-data.xyz",scam,free_data
+"Your electricity meter is faulty. Our technician will visit. Pay Rs 300 visit charge at bijli-seva-online.com/pay",scam,utility
+"Parcel from your relative in UK is at Delhi airport. Pay customs 45000 to release gold and cash inside.",scam,customs
+"Your OTP for Aadhaar authentication is 482910. It is valid for 10 minutes. Do not share it with anyone. -UIDAI",genuine,otp
+"Fee reminder: Semester fees of Rs 62,000 are due by 15 Nov. Pay on the college ERP. - Accounts Office",genuine,college
+"Dear parent, PTM is on Saturday 10 AM. Please attend without fail. Class Teacher, 8B",genuine,school
+"Your Ola ride with Suresh is arriving in 3 mins. OTP 4821. Share only with the driver at pickup.",genuine,ride
+"Your Blinkit order is packed. Share delivery code 7712 with the partner.",genuine,delivery
+"LIC premium of Rs 12,450 due on 28-Nov for policy ending 3321. Pay at licindia.in or any branch.",genuine,insurance
+"Salary of Rs 54,200 credited to your a/c XX9021 on 30-Oct. Avl bal Rs 61,015. - Axis Bank",genuine,txn
+"Your Google verification code is 771234",genuine,otp
+"Your EPF contribution of Rs 3,600 for Oct is credited. UAN ending 5512. - EPFO",genuine,epf
+"Doctor says the reports are normal, don't worry. Will reach home by 7.",genuine,chat
+"Bro send me the Wi-Fi password and the Netflix login for the TV please",genuine,chat
+"Please transfer your share of the rent, Rs 6000, by Sunday. Thanks!",genuine,chat
+"Reminder: your passport appointment is on 22 Nov at PSK Pune. Carry original documents. https://www.passportindia.gov.in",genuine,govt
+"Hurry! Big Diwali sale ends tonight. Up to 70% off on electronics at https://www.flipkart.com",genuine,marketing
+"Your Paytm wallet KYC is complete. You can now send money to bank accounts.",genuine,kyc_done
+"Congratulations on your promotion, Priya! Well deserved. Let's celebrate on Friday.",genuine,chat
+"कल की मीटिंग सुबह 11 बजे है, कृपया समय पर आएं।",genuine,hindi_chat
+"आपका ओटीपी 553210 है। इसे किसी के साथ साझा न करें। - एसबीआई",genuine,hindi_otp
+"Your account password was reset successfully. If this was not you, contact support from the app.",genuine,security_notice
+"Please verify your email address to finish creating your GitHub account. The code is 118822.",genuine,verification
+"The lab exam is postponed. Urgent: inform everyone in the class group immediately.",genuine,hard_negative
+"Your Airtel prepaid pack expires tomorrow. Recharge on the Airtel Thanks app to continue.",genuine,recharge
+"Reminder: your car insurance renews in 7 days. Renew from your insurer's official app.",genuine,insurance
+"Mom, I reached the hostel safely. Will call you after dinner.",genuine,chat

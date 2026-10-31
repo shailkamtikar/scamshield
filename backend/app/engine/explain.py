@@ -19,6 +19,12 @@ RECOMMENDATIONS = {
 }
 
 
+# Official domains, but anyone can create a link on them, so the domain says nothing about who sent it.
+OPEN_LINK_SERVICES = {"t.me", "telegram.me", "wa.me", "discord.gg", "forms.gle", "ig.me", "fb.me", "lnkd.in", "youtu.be"}
+
+PAYMENT_ADVICE = "Check that the name shown is who you mean to pay before you confirm. Remember that you never need to scan a QR or enter your PIN to receive money."
+
+
 def template_reasons(case: Case) -> list[str]:
     result = case.result
     risk = sorted((s for s in case.signals if s.polarity == "risk"), key=lambda s: -s.points)
@@ -39,7 +45,8 @@ def explain(case: Case, use_llm: bool = True) -> Case:
     result = case.result
     verdict = result["verdict"]
     result["reasons"] = template_reasons(case)
-    result["recommendation"] = RECOMMENDATIONS[verdict]
+    fixed_advice = PAYMENT_ADVICE if result.get("assurance") == "valid_payment" else None
+    result["recommendation"] = fixed_advice or RECOMMENDATIONS[verdict]
     result["reasoning_model"] = ""
 
     if not use_llm or (not case.signals and not case.message.strip()):
@@ -61,18 +68,22 @@ def explain(case: Case, use_llm: bool = True) -> Case:
     cleaned = [r.strip() for r in analysis.reasons if r and r.strip()][:5]
     if cleaned:
         result["reasons"] = cleaned
-    result["recommendation"] = analysis.recommendation.strip() or RECOMMENDATIONS[verdict]
+    result["recommendation"] = fixed_advice or analysis.recommendation.strip() or RECOMMENDATIONS[verdict]
     result["reasoning_model"] = model
     result["scam_type"] = analysis.scam_type
 
     # Second opinion: may raise SAFE -> SUSPICIOUS, never anything else.
-    has_some_risk = any(s.polarity == "risk" for s in case.signals) or any(u["trust"]["tier"] == "UNKNOWN" for u in result["urls"])
-    if verdict == "SAFE" and analysis.is_scam_likely and has_some_risk:
+    # Rules only know wording they were written for; this is what catches new
+    # scam scripts. A verified official link is not overruled by an AI opinion.
+    all_verified = bool(result["urls"]) and all(u["trust"]["tier"] == "OFFICIAL" and u["registrable"] not in OPEN_LINK_SERVICES for u in result["urls"])
+    genuine = any(s.id == "GENUINE_ALERT_PATTERN" for s in case.signals)
+    if verdict == "SAFE" and analysis.is_scam_likely and not all_verified and not genuine:
         sig = make("LLM_SCAM_INTENT", f"AI review of the wording: looks like {analysis.scam_type}.", "gemini")
         case.signals.append(sig)
         result["verdict"] = "SUSPICIOUS"
         result["risk_score"] = max(result["risk_score"], 30)
         result["risk_level"] = V.risk_level_for("SUSPICIOUS", result["risk_score"])
+        result["assurance"] = None
         result["confidence"] = min(result["confidence"], 0.7)
         result["decision_path"].append("L1_LLM_SECOND_OPINION")
         result["evidence"].insert(0, f"{sig.label}: {sig.explanation}")

@@ -63,6 +63,7 @@ Rules:
   DANGEROUS: advise not to click, reply or call, and mention reporting at cybercrime.gov.in or helpline 1930. COULD_NOT_VERIFY: the link
   does not exist or cannot be reached, so it should not be relied on. Write it as a natural sentence in your own words.
 - is_scam_likely reflects only the message wording and links given, not the score.
+- The recommendation must be one specific, practical sentence about this content, not a generic phrase.
 - Keep each reason under 30 words. Write for a non-technical person in India.
 """
 

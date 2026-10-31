@@ -111,6 +111,7 @@ def test_devanagari_advisory_is_not_a_credential_request():
 def test_verified_and_unknown_safe_are_different_claims():
     assert run("https://www.sbi.co.in/")["assurance"] == "verified"
     assert run("have a look at https://mycoolbakery.in")["assurance"] == "no_problems_found"
+    assert run("hello, lunch tomorrow?")["assurance"] == "no_links"
     assert run("http://sbi-kyc-update.top/login")["assurance"] is None
 
 

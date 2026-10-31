@@ -335,7 +335,7 @@ export default function Result({ meta, imageUrl, onReset }) {
       {(result.urls.length > 0 || result.qr) && (
         <Section title={result.qr ? "What this QR code does" : result.urls.length > 1 ? "The links we checked" : "The link we checked"}>
           <QrCard result={result} />
-          <Entities entities={result.entities} />
+          {!result.qr && <Entities entities={result.entities} />}
           <div className="space-y-4">{result.urls.map((u) => <LinkCard key={u.url} u={u} />)}</div>
           {result.skipped_urls?.length > 0 && <p className="mt-3 text-[14px] text-soft">{result.skipped_urls.length} more link{result.skipped_urls.length > 1 ? "s were" : " was"} not checked (we check up to 6 at a time).</p>}
         </Section>

@@ -25,6 +25,13 @@ If Google demands billing/credit card to enable it, stop and skip this key: the 
 
 Optional: PhishTank (registration is often closed; skip if unavailable).
 
+## Optional but recommended: urlscan.io (the real browser sandbox)
+Without this key ScamShield can only reuse earlier public scans of a site. With it, every unknown link is opened in an isolated browser on urlscan's computers.
+1. Sign up at https://urlscan.io/user/signup (free) and confirm your email.
+2. Open your profile -> Settings & API -> **New API key**, and copy it.
+3. Put it in `backend/.env` as `URLSCAN_API_KEY=...`.
+ScamShield submits scans as "unlisted" so links with personal tokens are not shown publicly.
+
 ## Gate C - before Milestone 9.1: hosting accounts
 1. **Render** (https://render.com): sign up with your GitHub account, free tier only. Authorise access to `shailkamtikar/scamshield`.
 2. **Vercel** (https://vercel.com): sign up with GitHub, import the repo, root directory `frontend`.

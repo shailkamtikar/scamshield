@@ -69,7 +69,7 @@ PATTERNS: dict[str, list[str]] = {
         r"\bcongratulations\b.{0,60}\b(?:won|winner|selected|prize|gift)\b", r"\bkbc\b", r"\bwinner\b",
     ],
     "KYC_UPDATE": [
-        r"\bkyc\b", r"\bre-?kyc\b", r"\bupdate (?:your )?(?:pan|aadhaa?r|account details|bank details|account|profile|mobile number|bank)\b",
+        r"\bkyc\b(?! (?:is |has been |was )?(?:complete|completed|done|successful|verified|approved))", r"\bre-?kyc\b", r"\bupdate (?:your )?(?:pan|aadhaa?r|account details|bank details|account|profile|mobile number|bank)\b",
         r"\b(?:pan|aadhaa?r) (?:is )?(?:not linked|expired|not updated|will be)\b", r"\bverify your (?:account|identity)\b",
         r"\bcomplete (?:your )?(?:kyc|verification)\b",
     ],

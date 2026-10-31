@@ -47,7 +47,7 @@ def test_valid_upi_payment_qr_is_safe_and_shows_payee():
     r = run(GPAY)
     assert r["verdict"] == "SAFE"
     assert r["qr"]["summary"]["payee"] == "Fresh Mart" and r["qr"]["summary"]["vpa"] == "store@okaxis"
-    assert r["confidence"] <= 0.8
+    assert r["confidence"] <= 0.8 and r["assurance"] == "valid_payment"
 
 
 def test_upi_with_unknown_bank_handle_is_flagged():
