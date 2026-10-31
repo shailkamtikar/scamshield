@@ -69,8 +69,8 @@ PATTERNS: dict[str, list[str]] = {
         r"\bcongratulations\b.{0,60}\b(?:won|winner|selected|prize|gift)\b", r"\bkbc\b", r"\bwinner\b",
     ],
     "KYC_UPDATE": [
-        r"\bkyc\b", r"\bre-?kyc\b", r"\bupdate (?:your )?(?:pan|aadhaa?r|details|account|profile|mobile number|bank)\b",
-        r"\b(?:pan|aadhaa?r) (?:is )?(?:not linked|expired|not updated|will be)\b", r"\bverify your (?:account|identity|details)\b",
+        r"\bkyc\b", r"\bre-?kyc\b", r"\bupdate (?:your )?(?:pan|aadhaa?r|account details|bank details|account|profile|mobile number|bank)\b",
+        r"\b(?:pan|aadhaa?r) (?:is )?(?:not linked|expired|not updated|will be)\b", r"\bverify your (?:account|identity)\b",
         r"\bcomplete (?:your )?(?:kyc|verification)\b",
     ],
     "JOB_TASK_SCAM": [
@@ -120,6 +120,27 @@ for _sid, _extra in {
     ],
     "SUSPICIOUS_CTA": [
         r"\b(?:contact|call|message|msg|ping)\b.{0,30}\b(?:whatsapp|telegram)\b", r"\bwhatsapp\b\W+\+?\d",
+    ],
+}.items():
+    PATTERNS[_sid].extend(_extra)
+
+
+# Hinglish, family-impersonation, advance-fee and "approve with PIN" tricks.
+for _sid, _extra in {
+    "FEAR_OR_THREAT": [
+        r"\b(?:suspend|block|band|deactivate|disable)\s+hone\s+wal[ae]\b", r"\bhone wala hai\b",
+    ],
+    "SUSPICIOUS_CTA": [r"\bclick karke\b", r"\blink par click\b"],
+    "FINANCIAL_PRESSURE": [
+        r"\bthis is my new (?:number|phone|no)\b", r"\bmy phone (?:broke|is (?:broken|lost|damaged|not working))\b",
+        r"\bsend (?:me )?(?:rs\.?|inr|₹)?\s?\d[\d,]*\s*(?:rupees|rs)?\s*(?:urgently|asap|now|immediately)\b",
+        r"\burgently\b.{0,30}\b(?:send|transfer|pay)\b",
+    ],
+    "PRIZE_LOTTERY": [r"\bgift parcel\b", r"\binheritance\b", r"\bunclaimed (?:funds|fortune|prize)\b", r"\bsingapore based investor\b"],
+    "UPI_COLLECT_SCAM": [
+        r"\b(?:request|collect)\b.{0,50}\bpin\b.{0,30}\b(?:approve|daal|dal|enter|submit)\b",
+        r"\bpin (?:daal|dal|daalo|dalo|enter)\b.{0,25}\bapprove\b",
+        r"\bapprove\b.{0,25}\b(?:with|using|after entering) (?:your )?(?:upi )?pin\b",
     ],
 }.items():
     PATTERNS[_sid].extend(_extra)

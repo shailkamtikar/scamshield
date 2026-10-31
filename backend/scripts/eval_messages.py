@@ -20,8 +20,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--show-errors", type=int, default=0)
     ap.add_argument("--live", action="store_true")
+    ap.add_argument("--file", default="messages.csv", help="messages.csv (synthetic templates) or messages_handwritten.csv (independent)")
     args = ap.parse_args()
-    rows = list(csv.DictReader(open(ROOT / "data" / "benchmark" / "messages.csv", encoding="utf-8")))
+    rows = list(csv.DictReader(open(ROOT / "data" / "benchmark" / args.file, encoding="utf-8")))
     tp = fn = fp = tn = 0
     cat = defaultdict(lambda: [0, 0])
     errs = []

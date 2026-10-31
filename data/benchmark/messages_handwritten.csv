@@ -1,0 +1,52 @@
+text,label,category
+"Your HDFC Bank NetBanking access has been temporarily restricted. Re-verify your identity within 12 hrs at hdfc-netbanking-verify.com to avoid permanent suspension.",scam,bank_phish
+"Dear SBI user, your YONO account is deactivated due to incomplete KYC. Click on https://sbi-yono-kyc.in/update to reactivate.",scam,bank_phish
+"Congratulations! Your mobile number has been selected for Rs 25,00,000 in Jio Lucky Draw. WhatsApp 8897456123 to claim.",scam,lottery
+"Dear customer, Rs 4,999 will be debited from your account for Norton subscription. If not you, call our helpdesk 9101234567 immediately to cancel.",scam,refund_call
+"Your Amazon order #402-1234 is on hold. Confirm your delivery address and pay Rs 2 handling at amzn-delivery-confirm.top/pay",scam,courier
+"We have noticed a login to your Paytm wallet from a new device. Verify now or your wallet will be blocked: paytm-secure-wallet.xyz",scam,wallet
+"Aapka Aadhaar suspend hone wala hai. Turant link par click karke update karein: bit.ly/aadh-up",scam,aadhaar_hinglish
+"Hi, I am Pooja from HR. We have a part-time job for you, earn 5000-8000 daily by liking YouTube videos. Contact us on Telegram @workfromhomejobs_hr",scam,job
+"Income Tax Dept: You are eligible for a refund of Rs 15,340. Submit your account number at incometax-refund-portal.in to receive it.",scam,tax_refund
+"Your electricity connection will be cut tonight 9:30pm because last month bill is not updated. Call electricity officer 8765432190 now.",scam,electricity
+"Dear Sir, your FASTag wallet balance is low and your tag will be deactivated. Recharge now using this link fastag-recharge-support.com",scam,fastag
+"Police case registered against your SIM card for illegal activity. Contact Mumbai Cyber Cell officer on 9988776655 immediately to avoid arrest.",scam,arrest
+"Hello, this is DHL. Your parcel from Dubai is stuck at customs. To release it pay Rs 3,499 customs duty via https://dhl-customs-release.click",scam,courier
+"Bhai urgent 5000 chahiye, UPI nahi chal raha, tu PhonePe pe request bhej de aur PIN daal ke approve kar de mai return kar dunga",scam,upi_pin
+"Congratulations, you have won an iPhone 15 in Flipkart Big Billion lucky draw. Claim before midnight: flipkart-winner-claim.shop",scam,lottery
+"Your PAN card is blocked. Update PAN now or pay penalty of Rs 10,000. Visit pan-update-nsdl.online",scam,pan
+"Instagram: we detected unusual activity. Your account will be disabled in 24 hours unless you verify here: instagram-help-verify.com",scam,social
+"Dear customer your ICICI credit card reward points worth Rs 9,850 will expire today. Redeem now: icici-rewards-claim.in or install our app from https://icici-rewards.in/app.apk",scam,rewards_apk
+"Sir/Madam, your LIC policy is lapsed. Pay premium via link to avoid penalty and legal notice. https://lic-premium-pay.top",scam,insurance
+"I am sending you 10,000 rupees for the item. Scan the QR code I sent and enter your UPI PIN to receive the payment.",scam,upi_collect
+"WhatsApp Gold: Your free subscription is expiring. Download WhatsApp Gold update now whatsapp-gold-update.com/WhatsAppGold.apk",scam,apk
+"Join our VIP stock market group and get daily tips with 95% accuracy guaranteed profit. WhatsApp 9123456780 for ipo allotment",scam,investment
+"Your Netflix membership payment failed. Update your payment details within 24 hours to avoid cancellation: netflix-billing-update.xyz/login",scam,subscription
+"Dear user, your Google Pay account has been limited. Verify your KYC by sharing OTP received on your phone with our agent.",scam,otp
+"Final notice: pay Rs 500 challan for traffic violation today or face court action. echallan-parivahan-pay.com",scam,challan
+"Hi dear, I am a Singapore based investor. I found your profile and want to send you a gift parcel. Pay clearance charges 12000 to receive it.",scam,romance
+"Mom this is my new number, my phone broke. Please send 20000 urgently to this account, I will explain later",scam,family_impersonation
+"Your Airtel number will be blocked in 2 hours because KYC has expired. Call 9810012345 for instant verification or click here airtel-kyc-update.in",scam,sim_kyc
+"Use code 482913 to log in to your Instagram account. Do not share it with anyone.",genuine,otp
+"Your OTP for HDFC Bank transaction of Rs 2,450 at SWIGGY is 558201. Do not share this OTP with anyone. Bank never asks for OTP.",genuine,otp
+"Rs 899 debited from your a/c XX4821 via UPI to NETFLIX on 03-Oct. Avl Bal Rs 12,402.15 - ICICI Bank",genuine,txn
+"Your Amazon order has been delivered. Rate your experience: https://www.amazon.in/gp/css/order-history",genuine,delivery
+"Reminder: Your Airtel bill of Rs 599 is due on 15 Nov. Pay on the Airtel Thanks app or https://www.airtel.in",genuine,bill
+"Hey, are we still meeting tomorrow at 6? I'll book the table at the usual place.",genuine,chat
+"Can you send me the notes from yesterday's class? Also here is the lecture link https://www.youtube.com/watch?v=abc123",genuine,chat
+"Your appointment with Dr. Sharma is confirmed for Tuesday 11:00 AM at Apollo Clinic. Reply CANCEL to cancel.",genuine,appointment
+"Your train PNR 4521367890 is confirmed. Coach B2, Seat 34. Journey date 18-Nov. Happy journey! IRCTC",genuine,railway
+"Meeting rescheduled to 4 pm. Join here: https://meet.google.com/xyz-abcd-efg",genuine,work
+"Dear customer, beware of fraud calls. SBI never asks for your PIN, OTP or password over call or SMS. Report suspicious activity to 1930.",genuine,advisory
+"Your Swiggy order is on the way! Track it live in the app. Delivery partner: Ramesh, 98xxxxxx21",genuine,delivery
+"Happy Birthday Rahul! Wishing you a wonderful year ahead. Dinner on me this weekend.",genuine,chat
+"Your electricity bill of Rs 1,240 for October has been generated. Pay by 12 Nov at https://www.tatapower.com or via the app.",genuine,bill
+"Zomato: Your order from Domino's is confirmed. Total Rs 487. Estimated delivery 32 mins.",genuine,delivery
+"Flipkart: Your refund of Rs 649 for order OD123 has been initiated and will reflect in 3-5 working days.",genuine,refund
+"URGENT: server is down, please check the deployment and reply asap. Logs in the usual channel.",genuine,hard_negative
+"Please verify the attendance sheet I shared and update your details by Friday. Thanks, Prof. Iyer",genuine,hard_negative
+"Your Google account password was changed. If this was you, no action is needed. Review activity at https://myaccount.google.com/notifications",genuine,security_notice
+"Your Jio recharge of Rs 299 is successful. Validity 28 days. Download MyJio from the Play Store.",genuine,recharge
+"Statement for your HDFC Bank credit card ending 7788 is generated. Total due Rs 3,420 by 20-Nov. View at https://www.hdfcbank.com",genuine,bill
+"Your UPI payment of Rs 150 to RAMESH KUMAR was successful. UPI Ref 4123456789. -Google Pay",genuine,txn
+"Dinner at 8? I'll pay this time, you got last time lol. Also check this place: https://www.zomato.com/mumbai/restaurants",genuine,chat
