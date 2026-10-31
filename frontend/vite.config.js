@@ -14,10 +14,11 @@ import { defineConfig } from "vite";
 const apiProxy = { "/api": { target: "http://127.0.0.1:8000", changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, "") } };
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ...(mode === "phone" ? [basicSsl()] : [])],
+  plugins: [react(), tailwindcss(), ...(mode === "phone" && !process.env.NO_TLS ? [basicSsl()] : [])],
   server: {
     port: 5173,
     ...(mode === "phone" ? { host: true, hmr: false, proxy: apiProxy } : {}),
   },
-  preview: { host: true, port: 5173, strictPort: true, proxy: apiProxy },
+  // NO_TLS=1 serves the same build over plain http (set by start-phone.bat on port 5175) as a fallback if a phone will not take the self-signed certificate
+preview: { host: true, port: Number(process.env.PREVIEW_PORT || 5173), strictPort: true, proxy: apiProxy },
 }));
