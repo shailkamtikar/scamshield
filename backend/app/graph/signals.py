@@ -28,11 +28,17 @@ class RiskSignal(BaseModel):
 #     social-engineering tactics.
 #   - URGENCY / SUSPICIOUS_CALL_TO_ACTION / URL_SUSPICIOUS_KEYWORD /
 #     URL_EXCESSIVE_SUBDOMAINS are common but weaker on their own.
+#   - URL_COMBOSQUAT_STRUCTURE is a brand-agnostic structural hint (a
+#     hyphenated domain compound containing an administrative word, e.g.
+#     "netflix-billing-support") — real, but weaker than a CONFIRMED
+#     BRAND_IMPERSONATION match against a specific claimed organization,
+#     since no candidate brand has been verified.
 #   - URL_INSECURE (no HTTPS) is a minor, easily-forged signal.
 CATEGORY_POINTS: dict[str, int] = {
     "BRAND_IMPERSONATION": 35,
     "URL_RAW_IP": 25,
     "CREDENTIAL_REQUEST": 20,
+    "URL_COMBOSQUAT_STRUCTURE": 20,
     "FEAR_OR_THREAT": 15,
     "FINANCIAL_PRESSURE": 15,
     "URL_EXCESSIVE_SUBDOMAINS": 15,
@@ -46,6 +52,7 @@ CATEGORY_LABELS: dict[str, str] = {
     "BRAND_IMPERSONATION": "Possible brand impersonation",
     "URL_RAW_IP": "URL uses a raw IP address",
     "CREDENTIAL_REQUEST": "Credential request",
+    "URL_COMBOSQUAT_STRUCTURE": "Lookalike domain compound structure",
     "FEAR_OR_THREAT": "Fear / threat language",
     "FINANCIAL_PRESSURE": "Financial pressure",
     "URL_EXCESSIVE_SUBDOMAINS": "Excessive subdomains",
@@ -80,7 +87,25 @@ def deduplicate_signals(signals: list[RiskSignal]) -> list[RiskSignal]:
         key = (signal.category, signal.target)
         if key not in seen:
             seen[key] = signal
-    return list(seen.values())
+
+    # A CONFIRMED BRAND_IMPERSONATION match (a specific claimed
+    # organization was compared against this exact target) is strictly
+    # stronger evidence than URL_COMBOSQUAT_STRUCTURE — the same
+    # brand-agnostic structural hint for the SAME target, just without a
+    # verified candidate brand. Once the stronger, more specific finding
+    # exists for a target, the generic one is redundant and would
+    # double-count the same underlying fact.
+    targets_with_brand_impersonation = {
+        target for (category, target) in seen if category == "BRAND_IMPERSONATION"
+    }
+    return [
+        signal
+        for (category, target), signal in seen.items()
+        if not (
+            category == "URL_COMBOSQUAT_STRUCTURE"
+            and target in targets_with_brand_impersonation
+        )
+    ]
 
 
 # Deterministic risk_score -> risk_level thresholds. This is the single

@@ -42,6 +42,56 @@ def normalize_domain(domain: str) -> str:
     return parts[0]
 
 
+# Generic, brand-agnostic vocabulary commonly glued onto an arbitrary
+# token to fabricate a "this belongs to some official account/billing
+# service" compound domain, e.g. "netflix-billing-support",
+# "bank-account-verification". Contains no company/brand names — only
+# generic security/administrative words — so structure detection below
+# works without knowing (or requiring the user to supply) which brand,
+# if any, is being impersonated.
+COMBOSQUAT_ADMIN_WORDS = {
+    "login", "signin", "secure", "security", "account", "verify",
+    "verification", "confirm", "confirmation", "update", "billing",
+    "payment", "support", "service", "alert", "suspended", "renew",
+    "renewal", "invoice", "helpdesk", "customer", "password", "recovery",
+    "authentication", "validate",
+}
+
+
+def has_combosquat_structure(domain: str) -> str | None:
+    """
+    Detect the STRUCTURAL shape of a combosquatting/lookalike domain — a
+    hyphenated compound containing a generic administrative/security word
+    — without a claimed organization to compare against.
+
+    This exists because identity_verification_node's brand comparison
+    (compare_domains, below) can only fire when a claimed_organization is
+    known. A QR code (or any bare URL with no surrounding text) often
+    carries no such context, so a domain like
+    "netflix-billing-support.example" previously produced ZERO evidence
+    when no brand was named — even though its shape alone is a classic
+    lookalike pattern. This check is brand-agnostic: it fires the same
+    way regardless of modality or whether a claimed organization was
+    ever supplied.
+
+    Returns the matched administrative word, or None if the domain's
+    first label isn't a multi-part hyphenated compound containing one.
+    """
+
+    hostname = _clean_hostname(domain)
+    first_label = hostname.split(".")[0]
+    parts = first_label.split("-")
+
+    if len(parts) < 2:
+        return None
+
+    for part in parts:
+        if part in COMBOSQUAT_ADMIN_WORDS:
+            return part
+
+    return None
+
+
 def compare_domains(claimed_name: str, domain: str) -> dict:
     """
     Compare a claimed organization name with a domain name.

@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 
 from app.graph.state import ScamShieldState
 from app.graph.signals import make_signal
+from app.services.domain_analysis import has_combosquat_structure
 from app.services.url_normalize import normalize_url
 
 
@@ -52,6 +53,16 @@ def investigate_url(url: str) -> list[str]:
     if len(hostname_parts) > 4:
         findings.append("URL contains an unusually large number of subdomains.")
 
+    # Check for a combosquat-shaped domain (brand-agnostic — does not
+    # require a claimed_organization) so a QR code or bare URL with no
+    # surrounding message context still surfaces this structural evidence.
+    combosquat_word = has_combosquat_structure(url)
+    if combosquat_word:
+        findings.append(
+            "URL domain has a lookalike-style compound structure "
+            f"(contains administrative word '{combosquat_word}')."
+        )
+
     return findings
 
 
@@ -93,6 +104,12 @@ def url_investigation_node(state: ScamShieldState) -> ScamShieldState:
                 new_signals.append(
                     make_signal(
                         "URL_EXCESSIVE_SUBDOMAINS", finding, "url_investigation", target=normalized
+                    )
+                )
+            elif "lookalike-style compound structure" in finding.lower():
+                new_signals.append(
+                    make_signal(
+                        "URL_COMBOSQUAT_STRUCTURE", finding, "url_investigation", target=normalized
                     )
                 )
 

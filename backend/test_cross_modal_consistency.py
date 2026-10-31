@@ -29,6 +29,11 @@ PHISHING_URL = "https://miconsoft-login.com"
 LEGITIMATE_URL = "https://www.microsoft.com/"
 NETFLIX_LOOKALIKE_URL = "https://netfl1x-billing-update.com"
 BARE_URL = "https://secure-login-update.info"
+# A combosquat-shaped domain with NO claimed organization — the exact
+# real-world QR scenario: identity_verification_node cannot compare
+# against a brand it was never told, so this URL must rely entirely on
+# the brand-agnostic structural signal to avoid scoring zero.
+NO_CLAIM_COMBOSQUAT_URL = "https://netflix-billing-support.example"
 
 URL_SIGNAL_LABELS = {
     "Possible brand impersonation",
@@ -36,6 +41,7 @@ URL_SIGNAL_LABELS = {
     "Insecure (non-HTTPS) URL",
     "URL uses a raw IP address",
     "Excessive subdomains",
+    "Lookalike domain compound structure",
 }
 
 
@@ -167,6 +173,23 @@ run(
 )
 run("G. Bare suspicious URL, no message language, no claimed org", BARE_URL)
 
+# ---------------------------------------------------------------------------
+# H. REGRESSION — the exact reported bug: a combosquat-shaped URL decoded
+# from a QR code, with NO claimed_organization (the QR endpoint never
+# requires one), must still produce URL-level evidence instead of scoring
+# 0/LOW just because no brand was named. Decoded via the REAL QR decoder,
+# exactly like the C/E cases above.
+# ---------------------------------------------------------------------------
+no_claim_decoded_url = encode_and_decode_qr(NO_CLAIM_COMBOSQUAT_URL)
+no_claim_qr_result = run(
+    "H. QR combosquat URL, no claimed_organization (regression)",
+    no_claim_decoded_url,
+)
+no_claim_text_result = run(
+    "H2. Same URL as TEXT, no claimed_organization (regression, cross-modal)",
+    NO_CLAIM_COMBOSQUAT_URL,
+)
+
 
 # ---------------------------------------------------------------------------
 # ASSERTIONS
@@ -221,5 +244,28 @@ print("PASS: legitimate microsoft.com scores 0/LOW whether submitted as text or 
 for label, result in [("TEXT", text_result), ("IMAGE", image_result), ("QR", qr_result)]:
     assert result["risk_level"] == derive_risk_level(result["risk_score"]), label
 print("PASS: risk_level is always derived from risk_score via fixed thresholds (never contradicts it)")
+
+# H. Regression: a combosquat-shaped URL with NO claimed_organization
+# must not silently score 0 just because QR (or any bare-URL input)
+# never named a brand.
+assert no_claim_qr_result["risk_score"] > 0, no_claim_qr_result["risk_score"]
+assert any(
+    item["signal"] == "Lookalike domain compound structure"
+    for item in no_claim_qr_result["score_breakdown"]
+), no_claim_qr_result["score_breakdown"]
+# And it must NOT contain a confirmed BRAND_IMPERSONATION claim — no
+# organization was ever named, so ScamShield cannot claim to know one.
+assert not any(
+    item["signal"] == "Possible brand impersonation"
+    for item in no_claim_qr_result["score_breakdown"]
+), no_claim_qr_result["score_breakdown"]
+# Same URL, no claimed org, submitted as TEXT instead of QR -> identical
+# URL-level evidence (this was never a QR-specific fix).
+assert no_claim_qr_result["score_breakdown"] == no_claim_text_result["score_breakdown"]
+print(
+    "PASS: combosquat-shaped URL with no claimed_organization now scores "
+    f"{no_claim_qr_result['risk_score']} ({no_claim_qr_result['risk_level']}) instead of 0/LOW, "
+    "identically whether submitted as QR or TEXT"
+)
 
 print("\nCross-modal consistency: PASS")

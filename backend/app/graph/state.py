@@ -37,4 +37,10 @@ class ScamShieldState(BaseModel):
 
     recommendation: str = ""
 
-    reasoning_model: str | None = None
+    # NOT Optional: LangGraph's pydantic-schema channel seeding drops a
+    # field entirely from graph.invoke()'s output dict if it is left at a
+    # `None` default and no node ever assigns it (as opposed to fields with
+    # a concrete default like "" or [], which always survive). A `str|None`
+    # default here caused exactly that for QR investigations whose decoded
+    # text produced no evidence (see gemini_reasoning_node).
+    reasoning_model: str = ""

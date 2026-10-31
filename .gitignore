@@ -23,3 +23,13 @@ stitch_scamshield_phishing_detector_ui.zip
 # OS
 .DS_Store
 Thumbs.db
+
+# Data pulled/generated at build or benchmark time
+data/raw/
+data/cache/
+reports/
+
+# Logs / coverage
+*.log
+.coverage
+htmlcov/
