@@ -58,7 +58,8 @@ def analyze_url(
     t = parsed.key
 
     if info.tier == "OFFICIAL":
-        signals.append(make("TRUSTED_OFFICIAL", f"{parsed.registrable} is the official domain of {info.brand}.", "trust", t))
+        what = f"{parsed.host_ascii} sits in the restricted .{info.zone} zone, which only {info.brand.split(' (')[0]} can register under." if info.zone else f"{parsed.registrable} is the official domain of {info.brand}."
+        signals.append(make("TRUSTED_OFFICIAL", what, "trust", t))
     elif info.tier == "POPULAR":
         signals.append(make("TRUSTED_POPULAR", f"{parsed.registrable} is a well-known site (top {info.rank}).", "trust", t))
 

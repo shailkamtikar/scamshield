@@ -54,7 +54,7 @@ PATTERNS: dict[str, list[str]] = {
     ],
     "CREDENTIAL_REQUEST": [
         r"\b(?:share|send|enter|provide|confirm|give|tell|submit|reply(?: with)?|forward|update|verify|type|dictate|read out)\b"
-        r"(?:\W+\w+){0,4}?\W+(?:otp|one[- ]time[- ]password|pin|upi pin|mpin|cvv|password|passcode|card number|"
+        r"(?:\W+\w+){0,6}?\W+(?:otp|one[- ]time[- ]password|pin|upi pin|mpin|cvv|password|passcode|card number|"
         r"card details|net ?banking|verification code|login details|atm pin|expiry)\b",
         # identifiers (Aadhaar / PAN / account number): handing them over is the risk, "updating" them is just KYC wording
         r"\b(?:share|send|enter|provide|give|tell|submit|reply(?: with)?|forward|type|dictate|read out)\b"
@@ -139,6 +139,7 @@ for _sid, _extra in {
         r"\bpay\b.{0,30}\bfee\b.{0,15}\bfirst\b",
     ],
     "CREDENTIAL_REQUEST": [
+        r"\b(?:otp|pin|cvv|password|passcode)\b(?:\W+\w+){0,3}?\W+(?:bhej\w*|bata\w*|sunao|de(?:do|na|in|dijiye)?)\b",
         r"\b(?:share|send|tell|give|read|forward|provide)\b\W+(?:it|this|that|the code|this code|the otp|the number)\b(?!\W+(?:only|just)\b).{0,40}\b(?:agent|executive|officer|person|caller|representative|someone|team|whatsapp|call)\b",
         r"\b(?:share|send|tell|give|read(?: out)?|forward|provide|dictate)\b(?:\W+\w+){0,4}?\W+(?:\d|six|four|5|6)[- ]?digit (?:code|otp|number|pin)\b",
         r"\b(?:share|send|tell|give|read(?: out)?|forward|provide|dictate)\b(?:\W+\w+){0,4}?\W+(?:the )?code (?:you|that you)(?: have)?(?: just)? (?:received|got|get)\b",

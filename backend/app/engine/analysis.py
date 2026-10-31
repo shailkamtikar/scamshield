@@ -14,7 +14,7 @@ from app.engine import verdict as V
 from app.engine.signals import WEIGHTS_VERSION, Signal, dedupe, make
 from app.engine.url_analysis import UrlReport, analyze_url
 from app.intel import email_msg
-from app.intel.trust import brand_tokens, is_shortener
+from app.intel.trust import GENERIC_BRAND_WORDS, OPEN_LINK_SERVICES, brand_tokens, is_shortener
 from app.intel.urls import ParsedUrl, extract_urls
 
 MAX_URLS = 6
@@ -34,9 +34,29 @@ SOFT_IDS = {"URGENCY", "FEAR_OR_THREAT", "KYC_UPDATE", "FINANCIAL_PRESSURE", "SU
 TOLL_FREE = ("1800", "1860")
 
 
+def _established_match(case: "Case", r: UrlReport) -> bool:
+    """
+    A domain our lists don't know, but which is the named organisation's own name, over five years old, clean in every
+    feed and free of any risk finding (e.g. bescom.co.in for a BESCOM bill notice). Needs the live checks: offline there is no age.
+    """
+    if r.trust["tier"] != "UNKNOWN" or r.trust.get("platform") or r.verdict != "SAFE" or is_shortener(r.host):
+        return False
+    if (r.domain_age_days or 0) < 5 * 365 or any(s.polarity == "risk" and s.strength != "weak" for s in r._signals):
+        return False
+    label = r.registrable.split(".")[0].lower().replace("-", "")
+    if len(label) < 4 or label in GENERIC_BRAND_WORDS or label in COMMON_WORDS:
+        return False
+    # the link is named after the organisation the message speaks as or about
+    words = set(re.findall(r"[a-z0-9]{4,}", case.message.lower()))
+    words |= {re.sub(r"[^a-z0-9]", "", b.name.lower()) for b in _expected_brands(case)}
+    return label in words
+
+
 def _has_unverified_channel(case: "Case") -> bool:
     """True if the message points to a link, number or chat we cannot tie to the sender's own organisation."""
     for r in case.url_reports:
+        if _established_match(case, r):
+            continue
         if r.trust["tier"] not in {"OFFICIAL", "POPULAR"} or r.trust.get("platform") or r.verdict != "SAFE" or is_shortener(r.host):
             return True
     entities = case.msg.entities if case.msg else {}
@@ -59,8 +79,30 @@ SELF_SERVICE = re.compile(
 )
 
 
+COMMON_WORDS = {"bank", "account", "online", "secure", "login", "verify", "update", "payment", "service", "services", "customer", "support", "portal", "india", "official", "alert", "notice", "offer", "reward", "refund", "claim"}
+TRANSMIT = re.compile(
+    r"\b(?:shar\w*|send\w*|tell\w*|giv\w*|read\w*|forward\w*|provid\w*|dictat\w*|repl\w*|whatsapp|call\w*|bhej\w*|bata\w*|de(?:do|na|in|dijiye)|sunao)\b"
+    r"|(?:बताएं|बताइए|बताओ|भेजें|भेजो|भेजिए|शेयर|दें|दीजिए|दो|सुनाएं|पाठवा|सांगा|द्या)",
+    re.I,
+)
+
+
+def _entry_instruction_only(case: "Case", msg_signals: list) -> bool:
+    """
+    "Enter the OTP received on your registered number" tells you how to complete a step yourself. It becomes a scam when a
+    person, number or link we cannot verify is where the secret goes (share / send / read out / reply, a mobile number, an
+    unknown link). Without such a channel there is nowhere to hand the secret over.
+    """
+    cred = [s for s in msg_signals if s.id == "CREDENTIAL_REQUEST"]
+    if any(TRANSMIT.search(s.explanation) for s in cred):
+        return False
+    if _has_unverified_channel(case):
+        return False
+    return not any(r.registrable in OPEN_LINK_SERVICES for r in case.url_reports)
+
+
 def _has_self_service_route(case: "Case") -> bool:
-    if any(r.trust["tier"] == "OFFICIAL" for r in case.url_reports):
+    if any(r.trust["tier"] == "OFFICIAL" or _established_match(case, r) for r in case.url_reports):
         return True
     entities = case.msg.entities if case.msg else {}
     if any(p.lstrip("+").removeprefix("91").startswith(TOLL_FREE) for p in entities.get("phones", [])):
@@ -78,6 +120,8 @@ def _scam_script(ids: set, case: "Case") -> bool:
         return True
     channel = _has_unverified_channel(case)
     if channel and ids & {"PRIZE_LOTTERY", "INVESTMENT_SCAM", "JOB_TASK_SCAM"}:
+        return True
+    if channel and ids & {"APK_INSTALL", "REMOTE_ACCESS_APP"}:
         return True
     if channel and "CREDENTIAL_REQUEST" in ids:
         return True  # a real bank never asks for a code, PIN or password and also hands you a number or link of its own
@@ -159,6 +203,12 @@ def step_decide(case: Case) -> Case:
     msg_signals = dedupe(msg_signals)
     informational: list[str] = []
     ids = {s.id for s in msg_signals if s.polarity == "risk"}
+    # "Enter the OTP received on your registered number" on the bank's own verified site is a login instruction.
+    # The secret goes to a destination we verified. Handing a code to a person or a number (share / send / read out) never is.
+    if "CREDENTIAL_REQUEST" in ids and _entry_instruction_only(case, msg_signals):
+        informational += [s.label for s in msg_signals if s.id == "CREDENTIAL_REQUEST"]
+        msg_signals = [s for s in msg_signals if s.id != "CREDENTIAL_REQUEST"]
+        ids = {s.id for s in msg_signals if s.polarity == "risk"}
     if ids and ids <= SOFT_IDS and not _has_unverified_channel(case) and (ids == {"FINANCIAL_PRESSURE"} or _has_self_service_route(case) or case.msg.message_type in {"otp", "transaction"}):
         informational = [s.label for s in msg_signals if s.polarity == "risk"]
         msg_signals = [s for s in msg_signals if s.polarity != "risk"]
@@ -215,10 +265,18 @@ def step_decide(case: Case) -> Case:
     else:
         url_part = max((r.risk_points for r in reports if r.verdict != "COULD_NOT_VERIFY"), default=0)
         total = url_part + msg_risk
-        if total >= 60:
+        has_strong = any(s.polarity == "risk" and s.strength in {"strong", "decisive"} for s in msg_signals) or any(
+            s.polarity == "risk" and (s.strength in {"strong", "decisive"} or (s.strength == "moderate" and s.id != "BRAND_MISMATCH_LINK"))
+            for r in reports for s in r._signals
+        )  # a link's own structure (a brand inside an unrelated domain, an odd name) counts; "names X but links elsewhere" alone does not
+        if total >= 60 and has_strong:
             verdict = "DANGEROUS"
             path.append("C1_MESSAGE_AND_LINK_COMBINED")
             score_raw, deciding = total, worst
+        elif total >= 60:
+            verdict = "SUSPICIOUS"
+            path.append("C3_MODERATE_SIGNALS_ONLY")
+            score_raw, deciding = 59, worst
         elif total >= 20:
             verdict = "SUSPICIOUS"
             path.append(f"U:{worst.rule}" if (worst and url_part) else "C2_COMBINED_RISK")

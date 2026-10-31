@@ -23,7 +23,7 @@ RECOMMENDATIONS = {
 
 
 # Official domains, but anyone can create a link on them, so the domain says nothing about who sent it.
-OPEN_LINK_SERVICES = {"t.me", "telegram.me", "wa.me", "discord.gg", "forms.gle", "ig.me", "fb.me", "lnkd.in", "youtu.be"}
+from app.intel.trust import OPEN_LINK_SERVICES  # noqa: E402
 
 PROMO_ADVICE = {
     "promotion": "This reads like an advertisement and the link goes to the organisation's own site. Reading it is harmless; offers can still end, so check the details in the official app or website.",

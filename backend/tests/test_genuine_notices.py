@@ -102,3 +102,43 @@ def test_long_pathological_input_is_analysed_quickly():
         started = time.time()
         run(text)
         assert time.time() - started < 3
+
+
+# ---- how-to and instruction messages (the real ICICI "login with mobile number" mail started this group)
+import csv as _csv
+from pathlib import Path as _Path
+
+LONGFORM = list(_csv.DictReader(open(_Path(__file__).resolve().parents[2] / "data" / "benchmark" / "genuine_longform.csv", encoding="utf-8")))
+NEEDS_LIVE = {"17"}  # a utility's own domain our lists do not know; only the live age and reputation checks can vouch for it
+
+
+@pytest.mark.parametrize("row", [r for r in LONGFORM if r["id"] not in NEEDS_LIVE], ids=lambda r: r["category"] + r["id"])
+def test_how_to_and_notice_mails_are_not_flagged(row):
+    r = run(row["text"])
+    assert r["verdict"] == "SAFE", (r["verdict"], r["risk_score"], r["message_signals"])
+
+
+def test_icici_mobile_login_howto_with_official_tracking_link_is_safe():
+    text = open(_Path(__file__).resolve().parents[2] / "data" / "benchmark" / "emails" / "icici_mobile_login.txt", encoding="utf-8").read()
+    r = run(text)
+    assert r["verdict"] == "SAFE" and r["urls"][0]["trust"]["tier"] == "OFFICIAL"
+    assert "restricted .bank.in zone" in " ".join(r["evidence"]) or "restricted .bank.in" in r["urls"][0]["signals"][0]["explanation"]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Log in at https://netbanking.hdfcbank.com and then read out the OTP to our executive on the phone.",
+        "Enter the OTP received on your mobile at https://hdfc-netbanking-secure.top/login",
+        "Open https://www.sbi.co.in, then reply to this message with the OTP you receive to confirm.",
+        "Login to https://www.icicibank.com and share your OTP with our agent on 9876543210 to unblock the account.",
+        "Aapka account band ho jayega. OTP bhejein 9876543210 par.",
+    ],
+)
+def test_instruction_wording_with_a_hand_over_channel_is_still_flagged(text):
+    assert run(text)["verdict"] in {"SUSPICIOUS", "DANGEROUS"}
+
+
+def test_threats_with_only_moderate_hints_never_reach_dangerous():
+    r = run("Dear Consumer, your connection will be disconnected tonight, pending bill. Pay at https://www.somecity-power.example/pay")
+    assert r["verdict"] != "DANGEROUS"

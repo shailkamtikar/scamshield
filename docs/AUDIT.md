@@ -100,6 +100,17 @@ Categories beyond common cases depend on hand-written rules; rules-only coverage
 | Application security | 7 | Fetcher hardened, dependencies clean; no authentication, no pen-test |
 | Production readiness | 5 | Not deployed, no real-user trial, no monitoring yet |
 
+## Addendum: how-to and instruction mails (ICICI "login with mobile number")
+
+A real ICICI mail explaining how to log in with a mobile number and OTP was marked suspicious (25). Cause: "enter the OTP received on your registered number" was read as a request for a secret, although the only link was the bank's own `*.bank.in` address. The class fixed: **instruction wording is not a request.** A credential ask is only a risk when there is a way to hand the secret to someone or somewhere we cannot verify (share / send / read out / reply, a mobile number, an unknown link, WhatsApp). Also fixed in the same pass:
+
+- Several *moderate* hints together (e.g. "disconnect", "pending bill", "names X but links elsewhere") can no longer add up to DANGEROUS; one strong finding is required.
+- A domain our lists do not know but which is named after the organisation in the message, is over 5 years old and clean in every feed is treated as that organisation's own address (live checks only; offline there is no age).
+- `*.bank.in`, `*.fin.in`, `*.gov.in` etc. now say what they are ("a licensed Indian bank") instead of "Government / academic domain".
+- "office", "windows", "outlook", "teams" and similar everyday words are no longer read as brand names.
+
+New test set `genuine_longform.csv` (25 how-to / notice mails: payments, ATM and card activation, UPI mandate approval, e-verify, UAN, SIM re-verification, returns, renewals): 5 were flagged on first run, 0 now offline (24 offline, the 25th needs the live checks). Guard tests confirm the same wording **with a hand-over channel** (read out to an executive, reply with the OTP, unknown link, mobile number, Hinglish "OTP bhejein") is still flagged. Total tests: 313 backend, 9 frontend.
+
 ## How to re-run everything
 
 ```bash

@@ -1,0 +1,11 @@
+No need to remember User ID and password.
+Login with the registered mobile number for quick and secure access to your bank account.
+How to login:
+1. Go to the Retail Net Banking login page
+2. Select "Login with Mobile Number"
+3. Enter your registered mobile number & click on "Authenticate"
+4. Enter details as per the Authentication mode* & verify
+5. Enter the OTP received on your registered mobile number
+6. Click on "Login"
+
+https://t6.customer.icici.bank.in/r/?id=h0f178eb0-a97e-47a1-afbe-89c7573a27ba,56fe02,1cff6d&e=Y2lkPXBETTY0NTE2MyZiaWQ9MGYxNzhlYjAtYTk3ZS00N2ExLWFmYmUtODljNzU3M2EyN2Jh&s=gXTrFG8TbmG6Uon5PfuJxRWgnNbLz_5wJmm_38rW4po

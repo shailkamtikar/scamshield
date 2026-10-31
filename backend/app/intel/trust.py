@@ -25,6 +25,17 @@ OFFICIAL_SUFFIXES = {
 }
 
 
+# Official domains that still let anyone create a link or page on them, so they say nothing about who sent the message.
+OPEN_LINK_SERVICES = {"t.me", "telegram.me", "wa.me", "discord.gg", "forms.gle", "ig.me", "fb.me", "lnkd.in", "youtu.be"}
+
+ZONE_NAMES = {
+    "bank.in": "a licensed Indian bank (restricted .bank.in domain)",
+    "fin.in": "a regulated Indian financial institution (restricted .fin.in domain)",
+    "gov.in": "the Government of India", "nic.in": "the Government of India", "mil.in": "the Indian armed forces",
+    "ac.in": "an Indian academic institution", "edu.in": "an Indian academic institution", "res.in": "an Indian research institution",
+}
+
+
 @dataclass(frozen=True)
 class Brand:
     name: str
@@ -37,6 +48,7 @@ class TrustInfo:
     tier: str  # OFFICIAL | POPULAR | UNKNOWN
     brand: str | None = None
     category: str | None = None
+    zone: str | None = None  # restricted zone the host sits in, e.g. "bank.in"
     rank: int | None = None
     platform: str | None = None  # user-content platform the host sits on
     shortener: bool = False
@@ -108,6 +120,7 @@ GENERIC_BRAND_WORDS = {
     "notion", "canva", "reddit", "twitch", "booking", "oracle", "intel", "wynk",
     "gaana", "voot", "nic", "sc", "citi", "ups", "dhl", "bse", "nse", "lic",
     "cleartax", "gati", "ajio", "hp", "pan", "uber", "meesho", "swiggy",
+    "office", "windows", "outlook", "teams", "edge", "word", "excel", "bing", "azure", "access", "gold", "prime", "neu",
 }
 
 
@@ -150,7 +163,10 @@ def classify(parsed: ParsedUrl) -> TrustInfo:
     # Judge the whole host: "hdfc.bank.in" is an ordinary subdomain of the restricted bank.in zone, so the
     # registrable part alone ("bank.in") would hide that every name under it was approved for a bank.
     if parsed.suffix.lower() in OFFICIAL_SUFFIXES or any(host == s or host.endswith("." + s) for s in OFFICIAL_SUFFIXES):
-        return TrustInfo("OFFICIAL", brand="Government / academic domain", category="government", shortener=shortener, reason=f".{parsed.suffix} is a restricted domain")
+        zone = next((s for s in sorted(OFFICIAL_SUFFIXES, key=len, reverse=True) if host == s or host.endswith("." + s)), parsed.suffix.lower())
+        name = ZONE_NAMES.get(zone, "a government or academic institution")
+        category = "bank" if zone in {"bank.in", "fin.in"} else "government"
+        return TrustInfo("OFFICIAL", brand=name, category=category, zone=zone, shortener=shortener, reason=f".{zone} is a restricted domain: only {name} can register under it")
 
     rank = tranco_ranks().get(registrable)
     if rank:
