@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     urlhaus_auth_key: str | None = None
     api_access_key: str | None = None
 
+    # Feature switches (all default on).
+    enable_network_intel: bool = True
+    enable_page_inspection: bool = True
+    enable_vision: bool = True
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value):
