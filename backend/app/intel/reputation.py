@@ -152,7 +152,7 @@ def check_virustotal(host: str) -> RepResult:
 
 
 # ---------------- URLhaus ----------------
-def check_urlhaus(url: str, host: str) -> RepResult:
+def check_urlhaus(url: str, host: str, host_level: bool = True) -> RepResult:
     name = "URLhaus"
     if not settings.urlhaus_auth_key:
         return RepResult(name, "skipped", "no Auth-Key")
@@ -166,13 +166,20 @@ def check_urlhaus(url: str, host: str) -> RepResult:
             r = c.post("https://urlhaus-api.abuse.ch/v1/url/", data={"url": url}, headers=headers)
             r.raise_for_status()
             data = r.json()
-            if data.get("query_status") != "ok":
+            exact = data.get("query_status") == "ok"
+            host_hit = False
+            if not exact and host_level:
+                # Whole-host listing only counts for unknown sites and only while a listed URL is still online;
+                # popular hosts (github, httpbin, ...) have a few abused URLs but are not malicious as a whole.
                 r = c.post("https://urlhaus-api.abuse.ch/v1/host/", data={"host": host}, headers=headers)
                 r.raise_for_status()
-                data = r.json()
+                hd = r.json()
+                host_hit = hd.get("query_status") == "ok" and any(u.get("url_status") == "online" for u in hd.get("urls", []))
         _breakers["urlhaus"].record(True)
-        if data.get("query_status") == "ok":
-            return _store(name, url, RepResult(name, "hit", "listed in URLhaus malware database", 1))
+        if exact:
+            return _store(name, url, RepResult(name, "hit", "this exact link is listed in the URLhaus malware database", 1))
+        if host_hit:
+            return _store(name, url, RepResult(name, "hit", "this site currently hosts malware listed in URLhaus", 1))
         return _store(name, url, RepResult(name, "clean"))
     except Exception as err:  # noqa: BLE001
         _breakers["urlhaus"].record(False)
@@ -229,7 +236,7 @@ def check_all(parsed: ParsedUrl, trusted: bool, use_virustotal: bool) -> list[Re
     """Run every provider concurrently. `trusted` domains skip VirusTotal to save its small quota."""
 
     url = parsed.url
-    jobs = [lambda: check_safe_browsing(url), lambda: check_openphish(url), lambda: check_urlhaus(url, parsed.host_ascii)]
+    jobs = [lambda: check_safe_browsing(url), lambda: check_openphish(url), lambda: check_urlhaus(url, parsed.host_ascii, host_level=not trusted)]
     if not trusted:
         if use_virustotal:
             jobs.append(lambda: check_virustotal(parsed.host_ascii))
