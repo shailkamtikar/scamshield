@@ -17,9 +17,11 @@ from app.intel.urls import ParsedUrl, extract_urls
 
 MAX_URLS = 6
 SEV = {"SAFE": 0, "COULD_NOT_VERIFY": 1, "SUSPICIOUS": 2, "DANGEROUS": 3}
+# Wording that actually pressures or asks for something. Ordinary words such as
+# "immediately" or "click here" appear in genuine notices and are not enough.
 RISKY_CONTEXT_IDS = {
-    "URGENCY", "FEAR_OR_THREAT", "CREDENTIAL_REQUEST", "KYC_UPDATE", "FINANCIAL_PRESSURE",
-    "SUSPICIOUS_CTA", "PRIZE_LOTTERY", "ARREST_THREAT", "JOB_TASK_SCAM", "APK_INSTALL",
+    "FEAR_OR_THREAT", "CREDENTIAL_REQUEST", "KYC_UPDATE", "FINANCIAL_PRESSURE", "PRIZE_LOTTERY",
+    "ARREST_THREAT", "JOB_TASK_SCAM", "APK_INSTALL", "UPI_COLLECT_SCAM", "REMOTE_ACCESS_APP", "INVESTMENT_SCAM",
 }
 
 
@@ -84,7 +86,9 @@ def step_decide(case: Case) -> Case:
     msg_signals = list(case.msg.signals if case.msg else []) + case.extra_signals
     msg_signals = dedupe(msg_signals)
     ids = {s.id for s in msg_signals if s.polarity == "risk"}
-    raw_msg_risk = sum(s.points for s in msg_signals if s.polarity == "risk")
+    strong_part = sum(s.points for s in msg_signals if s.polarity == "risk" and s.strength != "weak")
+    weak_part = sum(s.points for s in msg_signals if s.polarity == "risk" and s.strength == "weak")
+    raw_msg_risk = strong_part + (min(weak_part, 8) if strong_part else 0)  # ordinary words alone add nothing
     genuine = any(s.id == "GENUINE_ALERT_PATTERN" for s in msg_signals)
     msg_risk = max(0, raw_msg_risk - (15 if genuine else 0))
 
@@ -108,7 +112,7 @@ def step_decide(case: Case) -> Case:
     elif msg_risk >= 55:
         msg_verdict = "DANGEROUS"
         path.append("M5_MESSAGE_RISK_SUM")
-    elif msg_risk >= 20:
+    elif msg_risk >= 20 and strong_part > 0:
         msg_verdict = "SUSPICIOUS"
         path.append("M6_MESSAGE_RISK")
 

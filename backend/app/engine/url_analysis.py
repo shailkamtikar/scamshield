@@ -123,6 +123,9 @@ def analyze_url(
             if domain_facts and domain_facts.status == "ok":
                 checks["domain_age"] = "done"
                 signals.extend(facts.to_signals(parsed, domain_facts))
+                if domain_facts.age_days is not None and domain_facts.age_days > 3 * 365:
+                    # A site that has existed for years is not a freshly made imitation.
+                    signals = [s for s in signals if s.id != "BRAND_MISMATCH_LINK"]
             else:
                 checks["domain_age"] = "unavailable"
         else:

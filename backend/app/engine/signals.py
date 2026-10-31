@@ -19,7 +19,7 @@ CATALOG: dict[str, tuple[str, int, str, str]] = {
     "BRAND_LOOKALIKE": ("risk", 60, "strong", "Misspelled lookalike of a known brand"),
     "BRAND_COMBOSQUAT": ("risk", 55, "strong", "Brand name combined with account/security words"),
     "BRAND_IN_SUBDOMAIN_OR_PATH": ("risk", 45, "strong", "Brand name used on a domain that is not theirs"),
-    "BRAND_MISMATCH_LINK": ("risk", 45, "strong", "Message names one organization but links to another domain"),
+    "BRAND_MISMATCH_LINK": ("risk", 30, "moderate", "Message names one organization but links to another domain"),
     "BRAND_IN_DOMAIN": ("risk", 25, "moderate", "Brand name inside an unrelated domain"),
     "ADMIN_COMPOUND": ("risk", 25, "moderate", "Domain built from account/security words"),
     # --- domain structure ---

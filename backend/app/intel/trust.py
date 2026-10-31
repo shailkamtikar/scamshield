@@ -9,10 +9,13 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+import tldextract
+
 from app.intel.registry_data import REGISTRY, URL_SHORTENERS, USER_CONTENT_PLATFORMS
 from app.intel.urls import ParsedUrl
 
 DATA = Path(__file__).parent / "data"
+_extractor = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
 
 # Registrable-suffix rules: anything under these is run by governments or
 # accredited institutions (registration is restricted).
@@ -82,7 +85,7 @@ def brand_tokens() -> dict[str, Brand]:
         for part in re.split(r"[/&]", brand.name):
             candidates.add(_squash(part))
         for domain in brand.domains:
-            label = domain.split(".")[0]
+            label = _extractor(domain).domain  # "google" for mail.google.com, not "mail"
             candidates.add(_squash(label))
         for token in candidates:
             if len(token) >= 3 and token not in tokens:
@@ -98,6 +101,8 @@ def brand_tokens() -> dict[str, Brand]:
 
 
 GENERIC_BRAND_WORDS = {
+    "mail", "pay", "play", "docs", "drive", "maps", "open", "music", "one", "go", "app", "web", "live", "news", "life",
+    "bank", "money", "cash", "card", "home", "shop", "store", "online", "direct", "invest", "trade", "secure",
     "apple", "signal", "meta", "target", "zoom", "wise", "kite", "cred", "ola",
     "oyo", "mi", "x", "visa", "amazon", "indeed", "monster", "discord", "slack",
     "notion", "canva", "reddit", "twitch", "booking", "oracle", "intel", "wynk",

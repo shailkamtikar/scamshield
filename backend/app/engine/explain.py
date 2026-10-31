@@ -6,6 +6,8 @@ verdict to SUSPICIOUS; it can never lower a verdict, set a score, or set the
 confidence.
 """
 
+import re
+
 from app.engine import verdict as V
 from app.engine.analysis import Case
 from app.engine.signals import make
@@ -39,6 +41,19 @@ def template_reasons(case: Case) -> list[str]:
         else:
             reasons = ["No scam wording, suspicious links or other risk indicators were found."]
     return reasons
+
+
+def _mentions_own_official_address(case: Case) -> bool:
+    """The text names an organisation AND contains that organisation's real e-mail or web address."""
+    from app.intel.trust import official_index
+
+    text = case.message.lower()
+    brands = {b.name for b in (case.msg.mentioned_brands if case.msg else [])}
+    index = official_index()
+    for domain, brand in index.items():
+        if brand.name in brands and re.search(rf"[@/.]{re.escape(domain)}\b", text):
+            return True
+    return False
 
 
 def explain(case: Case, use_llm: bool = True) -> Case:
@@ -75,9 +90,16 @@ def explain(case: Case, use_llm: bool = True) -> Case:
     # Second opinion: may raise SAFE -> SUSPICIOUS, never anything else.
     # Rules only know wording they were written for; this is what catches new
     # scam scripts. A verified official link is not overruled by an AI opinion.
+    quote = " ".join(analysis.evidence_quote.lower().split())
+    quoted = bool(quote) and quote in " ".join(case.message.lower().split())
+    unknown_links = any(u["trust"]["tier"] == "UNKNOWN" for u in result["urls"])
+    concrete = analysis.asks_for in {"secret_code_or_password", "money", "personal_details", "install_app"} or (
+        analysis.asks_for in {"click_link", "call_number"} and unknown_links
+    )
+    names_own_official_address = _mentions_own_official_address(case)
     all_verified = bool(result["urls"]) and all(u["trust"]["tier"] == "OFFICIAL" and u["registrable"] not in OPEN_LINK_SERVICES for u in result["urls"])
     genuine = any(s.id == "GENUINE_ALERT_PATTERN" for s in case.signals)
-    if verdict == "SAFE" and analysis.is_scam_likely and not all_verified and not genuine:
+    if verdict == "SAFE" and analysis.is_scam_likely and concrete and quoted and not all_verified and not genuine and not (names_own_official_address and not unknown_links):
         sig = make("LLM_SCAM_INTENT", f"AI review of the wording: looks like {analysis.scam_type}.", "gemini")
         case.signals.append(sig)
         result["verdict"] = "SUSPICIOUS"

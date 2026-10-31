@@ -233,6 +233,9 @@ def extract_urls(text: str, limit: int = 20) -> list[ParsedUrl]:
             candidate = _strip(match.group(0))
             if not candidate:
                 continue
+            # "...your Broker.You may contact..." is a missing space after a full stop, not a link.
+            if pattern is _SCHEMELESS and re.fullmatch(r"[A-Z][a-z]+\.[A-Z][a-z]+", candidate):
+                continue
             # skip email domains (a@b.com) which the lookbehind may miss for unicode
             start = span[0]
             if start > 0 and cleaned[start - 1] == "@":

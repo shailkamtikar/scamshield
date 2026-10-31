@@ -1,0 +1,30 @@
+Funds/Securities Balance
+
+nse_alerts <nse_alerts@nse.co.in>
+Attachments
+to me
+
+Dear Investor,
+
+With reference to NSE circulars NSE/INSP/46704 dated December 17, 2020, and NSE/INSP/55039 dated December 28, 2022, Trading members are required to upload clients' securities balance on a daily basis.
+
+Further, with reference to NCL circular NCL/CMPL/49348 dated Aug 20, 2021, and NSE circular NSE/INSP/49691 dated September 22, 2021, Members are required to upload disaggregated collateral information (segment-wise and asset type wise) at the client level to their Clearing corporations on a daily basis.
+
+Information pertaining to your fund and securities balance as on 24-10-2026 provided by GROWW INVEST TECH PRIVATE LIMITED along with the details of securities ISIN wise is attached.
+
+Please follow the procedure given below for opening the attachment:
+
+Click on the attachment provided with this mail.
+You will be prompted for your password.
+The password is your PAN number in upper case.
+Please note that negative number in the file represents debit balance/balance payable by you. Also, the funds and securities balances provided are what is maintained with your broker and does not include balance in your personal bank account and demat account.
+
+You are advised to compare the funds, securities and commodities balances received from Exchange on a weekly basis with the balances in the weekly statement of accounts for funds, securities and commodities sent by the stockbroker for the respective date. In case you find any discrepancy in the balances, we advise you to take up the matter immediately with your Broker.You may contact customer service of the trading member.
+
+In case of non-resolution of discrepancy by the broker, you may intimate the same to the Exchange at ignse@nse.co.in or 18002660050 or register an online complaint at https://smartodr.in/login.
+
+The data is being provided to the clients on an "as is" and "what-is" basis as provided by the trading member. The Exchange shall not be liable for any delays, errors, omissions, commissions, inaccuracies in rendering the data.
+
+You are requested to note that in the event of trading member being declared as defaulter/expelled, all transactions executed on the exchange trading platform within 90 calendar days prior to the effective date of disablement of the trading member shall be considered eligible for compensation from IPFT. For details, you may refer the policy hosted on the website https://static.nseindia.com//s3fs-public/inline-files/Policy_for_evaluation_of_claims_0.pdf
+
+We would like to draw your attention to "SEBI vide circular dated April 04, 2022, wherein they have introduced the mechanism of Demat Debit and Pledge Instruction (DDPI)". Please refer to SEBI Circular dated October 06, 2022, for the list of instructions which client can give to its stockbroker. You may refer the following link for same: https://www.sebi.gov.in/legal/circulars/oct-2022/execution-of-demat-debit-and-pledge-instruction-ddpi-for-transfer-of-securities-towards-deliveries-settlement-obligations-and-pledging-re-pledging-of-securities-clarification_63724.html

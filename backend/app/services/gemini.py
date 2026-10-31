@@ -64,6 +64,12 @@ Rules:
   does not exist or cannot be reached, so it should not be relied on. Write it as a natural sentence in your own words.
 - is_scam_likely reflects only the message wording and links given, not the score.
 - The recommendation must be one specific, practical sentence about this content, not a generic phrase.
+- Be conservative about is_scam_likely. Genuine notices from banks, exchanges, regulators, brokers and government bodies are long, formal and often contain
+  words like "immediately", "click here", helpline numbers, warnings, circular numbers, advice not to share OTPs, instructions for opening a password-protected
+  attachment, GST/invoice/statement mails, and a request to whitelist the sender. None of these alone makes a message a scam.
+- Say is_scam_likely=true only if the message itself asks the reader for a secret code or password, money, personal details, to install an app, to call a number,
+  or to click a link, AND something makes that request untrustworthy (impersonation with a mismatched link, threats, rewards, pressure to act in minutes).
+  Fill asks_for and copy the exact concerning words into evidence_quote. If you cannot quote such words, set is_scam_likely=false and asks_for="none".
 - Keep each reason under 30 words. Write for a non-technical person in India.
 """
 

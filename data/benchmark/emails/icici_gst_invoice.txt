@@ -1,0 +1,20 @@
+Dear Customer,
+
+Please find attached the Goods and Services Tax (GST) invoice for your ICICI Bank Account.
+
+You need Adobe Acrobat Reader to view the attached file. If you do not have Adobe Acrobat Reader, please click here to download for free.
+
+To view the file, you need to enter any one of the following options as the password:
+
+Your “12-digit account number”/ ”Cust ID” whose last 4 digits are mentioned in the subject line of this e-mail
+An 8-character password wherein the first four letters of your password are the first 4 letters of your name as mentioned in your account, followed by your date and month of birth OR date and month of incorporation in case of current account (in DDMM format). The password is case-sensitive (lowercase). Please do not include any special characters, spaces or salutations (if any). In case of joint account, the details of the first account holder need to be entered in the above mentioned format.
+For example, if the name according to your account is Rajesh Sawant and your date of birth is January 05, 1950, then your password will be raje0501.
+
+Please cross-check the GST number in the invoice. If the GST number is not available in the attached invoice, it may be either Inactive/Invalid or not provided. Please contact the branch and update the GST number immediately.
+
+Sincerely,
+
+Team ICICI Bank
+
+
+Please add gstinvoice@icicibank.com to your white list/safe sender list to ensure that our e-mails always reach your inbox.

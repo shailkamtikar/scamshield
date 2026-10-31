@@ -159,6 +159,17 @@ for _sid, _extra in {
 }.items():
     PATTERNS[_sid].extend(_extra)
 
+
+# "Callback" scams: a made-up charge or subscription and a number to call.
+for _sid, _extra in {
+    "FINANCIAL_PRESSURE": [
+        r"\bwill be (?:debited|charged|deducted)\b.{0,90}\b(?:subscription|renewal|plan|order|invoice|antivirus)\b",
+        r"\b(?:subscription|renewal|antivirus)\b.{0,70}\bwill be (?:debited|charged|deducted)\b",
+        r"\bif (?:this was )?not (?:you|authori[sz]ed by you)\b.{0,50}\bcall (?:our |the )?(?:help ?desk|support|customer care|number)\b",
+    ],
+}.items():
+    PATTERNS[_sid].extend(_extra)
+
 PROMPT_INJECTION = re.compile(
     r"(?:ignore|disregard|forget)\W+(?:all\W+)?(?:the\W+)?(?:previous|prior|above|earlier)\W+(?:instructions?|rules?|prompts?)|"
     r"system prompt|you are now\b|mark (?:this|it) as safe|say (?:that )?(?:this|it) (?:is )?(?:safe|legit)|"
@@ -204,6 +215,12 @@ def mentioned_brands(text: str, extra: tuple[str, ...] = ()):
         if len(token) < 3 or token in GENERIC_BRAND_WORDS:
             continue
         if re.search(rf"\b{re.escape(token)}\b", low) and brand.name not in seen:
+            seen.add(brand.name)
+            found.append(brand)
+    # also the brand's full name written with spaces, e.g. "ICICI Bank"
+    for brand in {b for b in brand_tokens().values()}:
+        spaced = brand.name.lower()
+        if " " in spaced and len(spaced) >= 6 and spaced in low and brand.name not in seen:
             seen.add(brand.name)
             found.append(brand)
     return found
