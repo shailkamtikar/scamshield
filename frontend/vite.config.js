@@ -20,5 +20,5 @@ export default defineConfig(({ mode }) => ({
     ...(mode === "phone" ? { host: true, hmr: false, proxy: apiProxy } : {}),
   },
   // NO_TLS=1 serves the same build over plain http (set by start-phone.bat on port 5175) as a fallback if a phone will not take the self-signed certificate
-preview: { host: true, port: Number(process.env.PREVIEW_PORT || 5173), strictPort: true, proxy: apiProxy },
+preview: { host: true, allowedHosts: true, port: Number(process.env.PREVIEW_PORT || 5173), strictPort: true, proxy: apiProxy },
 }));
