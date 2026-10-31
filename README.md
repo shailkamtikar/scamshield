@@ -62,7 +62,7 @@ cd ../frontend && npm install
 
 Then double-click **`start-local.bat`** (or run `uv run uvicorn app.main:app --port 8000` in `backend/` and `npm run dev` in `frontend/`) and open http://localhost:5173.
 
-**Camera scanner from a phone:** browsers only allow the camera on HTTPS. Run **`start-phone.bat`**, open the `https://<your-pc-ip>:5173` address it prints on a phone on the same Wi-Fi, and accept the self-signed certificate warning.
+**Camera scanner from a phone:** browsers only allow the camera on HTTPS. Run **`start-phone.bat`**, open the `https://<your-pc-ip>:5173` address it prints on a phone on the same Wi-Fi, and accept the self-signed certificate warning. The phone serves the finished build (no live reload), because the dev server's reload WebSocket can loop on phones and show "too many redirects". If the page never opens, allow Node.js through Windows Firewall on private networks.
 
 ### Keys (`backend/.env`, never committed)
 
