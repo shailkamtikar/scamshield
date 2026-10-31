@@ -10,13 +10,13 @@ Needed for: URLhaus lookups and the URLhaus feed used in the benchmark.
 OpenPhish needs no key (public community feed), so 1.1 can still start with it if this is delayed.
 
 ## Gate B - before Milestone 2.5: Safe Browsing and VirusTotal
-**Google Safe Browsing API key** (free, non-commercial)
-1. Open https://console.cloud.google.com and sign in; create a project named e.g. `scamshield`.
-2. APIs & Services -> Library -> search **Safe Browsing API** -> Enable.
-3. APIs & Services -> Credentials -> Create credentials -> **API key**.
-4. Click the key -> restrict it to "Safe Browsing API" only (optionally add your Render IP later).
+**Google Safe Browsing API key** (free, non-commercial use only; checked against Google's docs, which now list Safe Browsing API **v5** with v4 still available)
+1. Sign in at https://console.cloud.google.com. At the top-left click the project selector -> **New project** -> name it `scamshield` -> Create, and make sure it is the selected project.
+2. Open the API page directly: https://console.cloud.google.com/apis/library/safebrowsing.googleapis.com and click **Enable**. (Or use the search bar at the top and type `safebrowsing.googleapis.com`; the console may label it "Safe Browsing API" - the service name is what matters.)
+3. Open https://console.cloud.google.com/apis/credentials -> **+ Create credentials** -> **API key**. Copy the key.
+4. Optional but recommended: click the key -> **API restrictions** -> Restrict key -> select the Safe Browsing API only -> Save.
 5. Put it in `backend/.env` as `SAFE_BROWSING_API_KEY=...`.
-No billing should be required for Safe Browsing; if Google asks for a card for the project, stop and tell me.
+If Google demands billing/credit card to enable it, stop and skip this key: the engine works without it (URLhaus, OpenPhish and VirusTotal still run), with slightly lower coverage. The backend will call the v5 endpoint `https://safebrowsing.googleapis.com/v5/hashes:search` (or `urls:search`) with the key as a `key` query parameter.
 
 **VirusTotal API key** (free: about 4 requests/min, 500/day)
 1. Sign up at https://www.virustotal.com (free account) and confirm your email.
