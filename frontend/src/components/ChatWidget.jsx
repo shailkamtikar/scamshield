@@ -81,9 +81,9 @@ export default function ChatWidget({ result }) {
             exit={{ opacity: 0, y: 14 }}
             transition={{ duration: 0.5, ease: EASE }}
             aria-label="Ask the ScamShield assistant"
-            className="fixed bottom-5 right-4 z-50 flex items-center gap-2.5 border border-[rgb(var(--tint))] bg-ink px-4 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] tint-text shadow-[0_8px_30px_-8px_rgba(0,0,0,0.7)] transition-colors hover:bg-[rgb(var(--tint))] hover:text-ink sm:right-6"
+            className="fixed bottom-5 right-4 z-50 flex items-center gap-2 rounded-full border border-line-strong bg-ink-2/90 px-4 py-2.5 text-[13.5px] font-medium text-text shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all hover:border-[rgba(var(--tint),0.6)] hover:-translate-y-0.5 sm:right-6"
           >
-            <MessageCircleQuestion size={18} /> Ask about scams
+            <MessageCircleQuestion size={17} className="tint-text" /> <span className="hidden sm:inline">Ask about scams</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -97,11 +97,11 @@ export default function ChatWidget({ result }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.98 }}
             transition={{ duration: 0.4, ease: EASE }}
-            className="fixed inset-x-3 bottom-3 z-50 flex max-h-[min(640px,calc(100dvh-24px))] flex-col border hairline bg-ink-2 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.8)] sm:inset-x-auto sm:bottom-5 sm:right-6 sm:w-[400px]"
+            className="fixed inset-x-3 bottom-3 z-50 flex max-h-[min(640px,calc(100dvh-24px))] flex-col overflow-hidden rounded-2xl border border-line-strong bg-ink-2 shadow-[0_30px_80px_-12px_rgba(0,0,0,0.9)] sm:inset-x-auto sm:bottom-5 sm:right-6 sm:w-[400px]"
           >
-            <header className="flex items-start justify-between gap-3 border-b hairline px-4 py-3.5">
+            <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3.5">
               <div>
-                <div className="display text-[22px] tracking-wide">Scam assistant</div>
+                <div className="display text-[1.5rem]">Scam assistant</div>
                 <p className="text-[12px] text-muted">Ask anything about scams and online safety.</p>
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="mt-0.5 flex h-8 w-8 items-center justify-center text-muted transition-colors hover:text-text">
@@ -118,7 +118,7 @@ export default function ChatWidget({ result }) {
                   </p>
                   <div className="mt-3 flex flex-col gap-2">
                     {suggestions.map((s) => (
-                      <button key={s} type="button" onClick={() => send(s)} className="border hairline px-3 py-2 text-left text-[13px] text-text transition-colors hover:border-[rgba(var(--tint),0.6)] hover:bg-[rgba(var(--tint),0.08)]">
+                      <button key={s} type="button" onClick={() => send(s)} className="rounded-lg border border-line-strong px-3 py-2 text-left text-[13px] text-text transition-colors hover:border-[rgba(var(--tint),0.6)] hover:bg-[rgba(var(--tint),0.08)]">
                         {s}
                       </button>
                     ))}
@@ -128,7 +128,7 @@ export default function ChatWidget({ result }) {
 
               {messages.map((m, i) => (
                 <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                  <div className={`max-w-[88%] whitespace-pre-wrap break-words px-3.5 py-2.5 text-[14px] leading-relaxed ${m.role === "user" ? "bg-[rgba(var(--tint),0.16)] text-text" : "border hairline bg-ink-3 text-text"}`}>
+                  <div className={`max-w-[88%] whitespace-pre-wrap break-words rounded-xl px-3.5 py-2.5 text-[14px] leading-relaxed ${m.role === "user" ? "bg-[rgba(var(--tint),0.16)] text-text" : "border border-line bg-ink-3 text-text"}`}>
                     {m.text || (busy && i === messages.length - 1 ? <span className="inline-flex gap-1" aria-label="Thinking">{[0, 1, 2].map((d) => <motion.span key={d} className="h-1.5 w-1.5 rounded-full bg-muted" animate={{ opacity: [0.25, 1, 0.25] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.18 }} />)}</span> : "")}
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function ChatWidget({ result }) {
               <div ref={endRef} />
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); send(draft); }} className="border-t hairline p-3">
+            <form onSubmit={(e) => { e.preventDefault(); send(draft); }} className="border-t border-line p-3">
               <div className="flex items-end gap-2">
                 <textarea
                   ref={inputRef}
@@ -148,9 +148,9 @@ export default function ChatWidget({ result }) {
                   maxLength={1200}
                   placeholder="Type your question…"
                   aria-label="Your question"
-                  className="max-h-28 min-h-[42px] flex-1 resize-none border hairline bg-ink/60 px-3 py-2.5 text-[14px] text-text outline-none placeholder:text-faint focus:border-[rgba(var(--tint),0.6)]"
+                  className="max-h-28 min-h-[42px] flex-1 resize-none rounded-lg border border-line-strong bg-ink/60 px-3 py-2.5 text-[14px] text-text outline-none placeholder:text-faint focus:border-[rgba(var(--tint),0.6)]"
                 />
-                <button type="submit" disabled={busy || !draft.trim()} aria-label="Send" className="flex h-[42px] w-[42px] shrink-0 items-center justify-center border border-[rgb(var(--tint))] tint-text transition-colors enabled:hover:bg-[rgb(var(--tint))] enabled:hover:text-ink disabled:opacity-35">
+                <button type="submit" disabled={busy || !draft.trim()} aria-label="Send" className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg bg-[rgb(var(--tint))] text-ink transition-all enabled:hover:brightness-110 disabled:opacity-35">
                   <ArrowUp size={18} />
                 </button>
               </div>

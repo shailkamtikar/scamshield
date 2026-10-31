@@ -5,7 +5,7 @@ const BASE = {
   SAFE_NO_LINKS: { word: "Clear", color: "var(--color-safe)", headline: "No warning signs.", blurb: "The wording doesn't look like a scam, and there are no links to check." },
   PROMO: { word: "Promotion", color: "var(--color-promo)", headline: "An advertisement.", blurb: "Reading it is harmless, and its link goes to the organisation's own site. Offers can still expire, so check details in the official app." },
   PROMO_UNVERIFIED: { word: "Promotion", color: "var(--color-promo)", headline: "An advertisement.", blurb: "Reading it is harmless, but we couldn't confirm where its link leads. Don't tap it; open the official app or site yourself." },
-  SPAM: { word: "Spam", color: "var(--color-unknown)", headline: "Unwanted advertising.", blurb: "Harmless to read, but we couldn't tie it to a known organisation or confirm where its link leads. Don't tap it; delete it." },
+  SPAM: { word: "Spam", color: "var(--color-spam)", headline: "Unwanted advertising.", blurb: "Harmless to read, but we couldn't tie it to a known organisation or confirm where its link leads. Don't tap it; delete it." },
   SUSPICIOUS: { word: "Suspicious", color: "var(--color-warn)", headline: "Don't trust this yet.", blurb: "Some warning signs showed up. Verify through an official channel before acting." },
   DANGEROUS: { word: "Dangerous", color: "var(--color-danger)", headline: "Do not open or reply.", blurb: "Strong evidence of a scam or phishing attempt." },
   COULD_NOT_VERIFY: { word: "Unverified", color: "var(--color-unknown)", headline: "We couldn't verify this.", blurb: "The link doesn't exist or can't be reached, so there was nothing to inspect." },
@@ -46,3 +46,11 @@ export const REACH_LABEL = {
   BLOCKED: "blocked for safety",
   ERROR: "could not check",
 };
+
+/** The key used to tint the whole page for a finished result (matches [data-verdict] in index.css). */
+export function toneOf(result) {
+  if (!result) return undefined;
+  if (result.verdict === "SAFE" && result.assurance === "spam") return "SPAM";
+  if (result.verdict === "SAFE" && String(result.assurance || "").startsWith("promotion")) return "PROMO";
+  return result.verdict;
+}

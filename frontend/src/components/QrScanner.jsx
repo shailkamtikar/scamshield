@@ -86,13 +86,13 @@ export default function QrScanner({ onDecoded, onUnavailable }) {
 
   return (
     <div>
-      <div className="relative aspect-[4/3] w-full overflow-hidden border hairline bg-ink-3 sm:aspect-[16/10]">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-line-strong bg-ink-3 sm:aspect-[16/10]">
         <video ref={video} playsInline muted className={`h-full w-full object-cover ${state === "active" ? "opacity-100" : "opacity-0"} transition-opacity duration-500`} />
 
         <AnimatePresence>
           {state === "active" && (
             <motion.div className="pointer-events-none absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(5,7,13,0.75)_100%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(9,11,15,0.75)_100%)]" />
               <div className="absolute left-1/2 top-1/2 h-[58%] w-[58%] max-w-[300px] -translate-x-1/2 -translate-y-1/2" style={{ aspectRatio: "1/1" }}>
                 {[["top-0 left-0", "border-l-2 border-t-2"], ["top-0 right-0", "border-r-2 border-t-2"], ["bottom-0 left-0", "border-b-2 border-l-2"], ["bottom-0 right-0", "border-b-2 border-r-2"]].map(([pos, b]) => (
                   <span key={pos} className={`absolute h-6 w-6 ${pos} ${b}`} style={{ borderColor: "rgb(var(--tint))" }} />
@@ -113,14 +113,14 @@ export default function QrScanner({ onDecoded, onUnavailable }) {
               <p role="alert" className="max-w-[420px] text-[13px] leading-relaxed text-muted">{error}</p>
             ) : (
               <>
-                <div className="display text-[26px]">Scan with camera</div>
+                <div className="display text-[1.9rem]">Scan with camera</div>
                 <p className="max-w-[420px] text-[13px] leading-relaxed text-muted">
                   The code is read on your device. Only its text is sent for checking, and the link is <b className="text-text">never opened</b>.
                 </p>
               </>
             )}
             {state !== "error" && (
-              <button type="button" onClick={start} disabled={state === "starting"} className="inline-flex items-center gap-2 border border-[rgb(var(--tint))] px-5 py-2.5 text-[13px] font-medium tint-text transition-colors hover:bg-[rgba(var(--tint),0.12)] disabled:opacity-50">
+              <button type="button" onClick={start} disabled={state === "starting"} className="btn-primary !py-2.5 !text-[13.5px]">
                 {state === "starting" ? "Starting camera…" : "Allow camera & scan"}
               </button>
             )}
@@ -130,12 +130,12 @@ export default function QrScanner({ onDecoded, onUnavailable }) {
 
       {state === "active" && (
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={() => { stop(); setState("idle"); }} className="border hairline px-3 py-1.5 text-[12px] text-muted transition-colors hover:text-text">Stop camera</button>
+          <button type="button" onClick={() => { stop(); setState("idle"); }} className="btn-ghost !px-3 !py-1.5 !text-[12.5px]">Stop camera</button>
           {flash.available && (
             <button
               type="button"
               onClick={async () => { await scanner.current?.toggleFlash(); setFlash((f) => ({ ...f, on: !f.on })); }}
-              className={`inline-flex items-center gap-1.5 border px-3 py-1.5 text-[12px] ${flash.on ? "tint-border tint-text" : "hairline text-muted"}`}
+              className={`btn-ghost !px-3 !py-1.5 !text-[12.5px] ${flash.on ? "tint-border tint-text" : ""}`}
             >
               <Zap size={13} /> Torch
             </button>
