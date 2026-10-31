@@ -1,0 +1,27 @@
+# Render Blueprint: the ScamShield API. The frontend goes on Vercel (see frontend/vercel.json).
+services:
+  - type: web
+    name: scamshield-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+      - key: CORS_ORIGINS          # the Vercel address, e.g. https://scamshield.vercel.app (comma separated for several)
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_CHAT_API_KEY
+        sync: false
+      - key: SAFE_BROWSING_API_KEY
+        sync: false
+      - key: VIRUSTOTAL_API_KEY
+        sync: false
+      - key: URLHAUS_AUTH_KEY
+        sync: false
+      - key: URLSCAN_API_KEY
+        sync: false
