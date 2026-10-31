@@ -1,5 +1,5 @@
 from app.graph.state import ScamShieldState
-from app.services.gemini import analyze_scam_evidence
+from app.services.gemini import GeminiUnavailable, analyze_scam_evidence
 
 
 def gemini_reasoning_node(state: ScamShieldState) -> ScamShieldState:
@@ -32,15 +32,41 @@ def gemini_reasoning_node(state: ScamShieldState) -> ScamShieldState:
         state.reasoning_model = ""
         return state
 
-    assessment, model_used = analyze_scam_evidence(
-        state.evidence,
-        risk_score=state.risk_score,
-        score_breakdown=state.score_breakdown,
-    )
+    try:
+        assessment, model_used = analyze_scam_evidence(
+            state.evidence,
+            risk_score=state.risk_score,
+            score_breakdown=state.score_breakdown,
+        )
+    except GeminiUnavailable:
+        return _rules_only_result(state)
 
     state.confidence = assessment.confidence
     state.reasons = assessment.reasons
     state.recommendation = assessment.recommendation
     state.reasoning_model = model_used
 
+    return state
+
+
+_RULES_ONLY_RECOMMENDATIONS = {
+    "CRITICAL": "Do not open any links, reply, or share any details. Delete the message and report it at cybercrime.gov.in or call 1930.",
+    "HIGH": "Treat this as a likely scam. Do not click links or share details; verify through the organization's official website or app.",
+    "MEDIUM": "Be cautious. Verify the sender through an official channel before acting.",
+    "LOW": "No risk indicators were found, but never share OTPs or PINs with anyone.",
+}
+
+
+def _rules_only_result(state: ScamShieldState) -> ScamShieldState:
+    """Deterministic explanation used when no Gemini key is configured."""
+
+    state.reasons = [
+        f"{item['signal']} (+{item['points']} points)"
+        for item in state.score_breakdown
+    ] or list(state.evidence[:5])
+    state.recommendation = _RULES_ONLY_RECOMMENDATIONS.get(
+        state.risk_level, _RULES_ONLY_RECOMMENDATIONS["MEDIUM"]
+    )
+    state.confidence = 0.5
+    state.reasoning_model = ""
     return state

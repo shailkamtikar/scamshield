@@ -1,13 +1,70 @@
-import os
+import shutil
+from pathlib import Path
 
-from dotenv import load_dotenv
+from typing import Annotated
 
-load_dotenv()
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY was not found.")
+_WINDOWS_TESSERACT = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
 
-PRIMARY_GEMINI_MODEL = os.getenv("PRIMARY_GEMINI_MODEL", "gemini-3.6-flash")
-SECONDARY_GEMINI_MODEL = os.getenv("SECONDARY_GEMINI_MODEL", "gemini-3.5-flash-lite")
+
+def _default_tesseract() -> str | None:
+    found = shutil.which("tesseract")
+    if found:
+        return found
+    if _WINDOWS_TESSERACT.exists():
+        return str(_WINDOWS_TESSERACT)
+    return None
+
+
+class Settings(BaseSettings):
+    """
+    Single source of configuration, read from environment variables / .env.
+    Every external key is optional: the engine degrades gracefully when a
+    provider is not configured instead of failing at import time.
+    """
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    gemini_api_key: str | None = None
+    primary_gemini_model: str = "gemini-3.6-flash"
+    secondary_gemini_model: str = "gemini-3.5-flash-lite"
+
+    tesseract_cmd: str | None = Field(default_factory=_default_tesseract)
+
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+    # Reserved for later phases (threat-intel providers, access control).
+    safe_browsing_api_key: str | None = None
+    virustotal_api_key: str | None = None
+    urlhaus_auth_key: str | None = None
+    api_access_key: str | None = None
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _split_origins(cls, value):
+        if isinstance(value, str) and not value.lstrip().startswith("["):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("tesseract_cmd", "gemini_api_key", mode="before")
+    @classmethod
+    def _blank_to_none(cls, value):
+        return value or None
+
+    def configured_providers(self) -> dict[str, bool]:
+        return {
+            "gemini": bool(self.gemini_api_key),
+            "safe_browsing": bool(self.safe_browsing_api_key),
+            "virustotal": bool(self.virustotal_api_key),
+            "urlhaus": bool(self.urlhaus_auth_key),
+            "tesseract": bool(self.tesseract_cmd),
+        }
+
+
+settings = Settings()

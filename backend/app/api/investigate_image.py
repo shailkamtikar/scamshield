@@ -5,7 +5,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.api._shared import run_investigation
 from app.graph.state import ScamShieldState
-from app.services.ocr import extract_text_from_image
+from app.services.ocr import OcrUnavailable, extract_text_from_image
 
 
 router = APIRouter()
@@ -51,6 +51,8 @@ async def investigate_image(
 
     try:
         extracted_text = extract_text_from_image(tmp_path)
+    except OcrUnavailable as err:
+        raise HTTPException(status_code=503, detail=str(err)) from err
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 

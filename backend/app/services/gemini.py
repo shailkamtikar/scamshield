@@ -1,11 +1,25 @@
 from google import genai
 from google.genai import errors as genai_errors
 
-from app.config import GEMINI_API_KEY, PRIMARY_GEMINI_MODEL, SECONDARY_GEMINI_MODEL
+from app.config import settings
 from app.services.gemini_schema import GeminiAssessment
 
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+class GeminiUnavailable(RuntimeError):
+    """No Gemini API key is configured."""
+
+
+_client: genai.Client | None = None
+
+
+def _get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        if not settings.gemini_api_key:
+            raise GeminiUnavailable("GEMINI_API_KEY is not configured.")
+        _client = genai.Client(api_key=settings.gemini_api_key)
+    return _client
+
 
 # HTTP status codes worth retrying against the secondary model: rate limiting
 # and transient server-side failures. Anything else (auth, bad request,
@@ -68,7 +82,7 @@ Important rules:
 
 
 def _call_model(model: str, prompt: str) -> GeminiAssessment:
-    response = client.models.generate_content(
+    response = _get_client().models.generate_content(
         model=model,
         contents=prompt,
         config={
@@ -94,8 +108,8 @@ def analyze_scam_evidence(
     grounding context — Gemini explains and calibrates confidence around
     them, it does not compute or override risk_score itself.
 
-    Tries PRIMARY_GEMINI_MODEL first. Only falls back to
-    SECONDARY_GEMINI_MODEL on a recoverable API failure (rate limiting or
+    Tries settings.primary_gemini_model first. Only falls back to
+    settings.secondary_gemini_model on a recoverable API failure (rate limiting or
     a transient server error) — never to mask a real bug.
 
     Returns (assessment, model_name_used).
@@ -104,11 +118,11 @@ def analyze_scam_evidence(
     prompt = _build_prompt(evidence, risk_score, score_breakdown)
 
     try:
-        assessment = _call_model(PRIMARY_GEMINI_MODEL, prompt)
-        return assessment, PRIMARY_GEMINI_MODEL
+        assessment = _call_model(settings.primary_gemini_model, prompt)
+        return assessment, settings.primary_gemini_model
     except genai_errors.APIError as err:
         if getattr(err, "code", None) not in RECOVERABLE_STATUS_CODES:
             raise
 
-    assessment = _call_model(SECONDARY_GEMINI_MODEL, prompt)
-    return assessment, SECONDARY_GEMINI_MODEL
+    assessment = _call_model(settings.secondary_gemini_model, prompt)
+    return assessment, settings.secondary_gemini_model
