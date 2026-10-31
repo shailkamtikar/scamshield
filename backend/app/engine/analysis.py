@@ -183,10 +183,17 @@ def step_decide(case: Case) -> Case:
         contrib[s.label] = contrib.get(s.label, 0) + (s.points if s.polarity == "risk" else -s.points)
     breakdown = [{"signal": k, "points": v} for k, v in sorted(contrib.items(), key=lambda kv: -abs(kv[1]))]
 
+    assurance = None
+    if verdict == "SAFE":
+        tiers = {r.trust["tier"] for r in reports}
+        verified = any(s.id in {"VERIFIED_SERVICE", "GENUINE_ALERT_PATTERN"} for s in case.signals) or (tiers and tiers <= {"OFFICIAL", "POPULAR"})
+        assurance = "verified" if verified else "no_problems_found"
+
     dangerous_ids = ids | {s.id for r in reports for s in r._signals if s.polarity == "risk"}
     case.result = {
         "schema_version": 2,
         "verdict": verdict,
+        "assurance": assurance,
         "risk_score": score if score is not None else 0,
         "risk_level": V.risk_level_for(verdict, score),
         "confidence": confidence,

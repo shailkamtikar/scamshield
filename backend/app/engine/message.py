@@ -145,6 +145,20 @@ for _sid, _extra in {
 }.items():
     PATTERNS[_sid].extend(_extra)
 
+
+# Hindi in Devanagari script. \b is unreliable around Devanagari vowel signs, so these match plainly.
+for _sid, _extra in {
+    "URGENCY": [r"तुरंत", r"तुरन्त", r"अभी\s", r"जल्दी\s+(?:करें|करो)", r"आज\s+ही"],
+    "FEAR_OR_THREAT": [r"बंद\s+(?:हो\s+जाएगा|कर\s+दिया|होने\s+वाला)", r"ब्लॉक", r"निलंबित", r"सस्पेंड", r"रद्द\s+(?:हो|कर)", r"कनेक्शन\s+काट"],
+    "ARREST_THREAT": [r"गिरफ्तार", r"पुलिस\s+(?:केस|कार्रवाई)", r"डिजिटल\s+अरेस्ट"],
+    "CREDENTIAL_REQUEST": [r"(?:ओटीपी|पिन|पासवर्ड|सीवीवी|कार्ड\s+नंबर|खाता\s+संख्या)(?:\s+\S+){0,3}\s+(?<!न )(?<!ना )(?<!मत )(?:बताएं|बताइए|भेजें|भेजो|शेयर\s+करें|दर्ज\s+करें|दें)"],
+    "KYC_UPDATE": [r"केवाईसी", r"(?:आधार|पैन)(?:\s+\S+){0,2}\s+अपडेट"],
+    "PRIZE_LOTTERY": [r"लॉटरी", r"इनाम", r"जीत\s+(?:लिया|लिए|गए)", r"बधाई\s+हो"],
+    "FINANCIAL_PRESSURE": [r"रिफंड", r"कैशबैक", r"(?:प्रोसेसिंग|डिलीवरी)\s+शुल्क"],
+    "SUSPICIOUS_CTA": [r"लिंक\s+पर\s+क्लिक", r"क्लिक\s+करें"],
+}.items():
+    PATTERNS[_sid].extend(_extra)
+
 PROMPT_INJECTION = re.compile(
     r"(?:ignore|disregard|forget)\W+(?:all\W+)?(?:the\W+)?(?:previous|prior|above|earlier)\W+(?:instructions?|rules?|prompts?)|"
     r"system prompt|you are now\b|mark (?:this|it) as safe|say (?:that )?(?:this|it) (?:is )?(?:safe|legit)|"

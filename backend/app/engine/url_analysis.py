@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from app.config import settings
 from app.engine import verdict as V
 from app.engine.signals import Signal, make
-from app.intel import facts, lexical, net, page, reputation, trust
+from app.intel import facts, lexical, net, page, reputation, sandbox, trust, url_model
 from app.intel.urls import ParsedUrl, parse_url
 
 
@@ -28,6 +28,8 @@ class UrlReport:
     reachability: dict | None
     reputation: list[dict]
     domain_age_days: int | None = None
+    page_title: str = ""
+    sandbox: dict | None = None
     registrar: str | None = None
     destination: "UrlReport | None" = None
     checks: dict = field(default_factory=dict)
@@ -66,11 +68,16 @@ def analyze_url(
             names = ", ".join(sorted({b.name for b in expected_brands})[:2])
             signals.append(make("BRAND_MISMATCH_LINK", f"The message talks about {names}, but the link goes to {parsed.registrable}.", "message", t))
 
+    if info.tier == "UNKNOWN" and not info.platform and not parsed.is_ip and not any(s.id in V.FAKE_IDS for s in signals):
+        if url_model.is_risky(parsed.registrable):
+            signals.append(make("ML_DOMAIN_RISK", f"The name '{parsed.registrable}' closely resembles domains used in known phishing.", "model", t))
+
     checks = {"lexical": "done", "trust": "done"}
     rep_results: list[reputation.RepResult] = []
     fetch_result: net.FetchResult | None = None
+    page_info: page.PageInfo | None = None
     domain_facts: facts.DomainFacts | None = None
-    structural_fake = any(s.id in V.FAKE_IDS for s in signals)
+    sandbox_result: sandbox.SandboxResult | None = None
 
     if network:
         need_fetch = info.tier != "OFFICIAL" and settings.enable_fetch
@@ -86,7 +93,7 @@ def analyze_url(
 
         signals.extend(reputation.to_signals(parsed, rep_results))
         by_name = {r.provider: r for r in rep_results}
-        for key, provider in (("google_safe_browsing", "Google Safe Browsing"), ("openphish", "OpenPhish"), ("urlhaus", "URLhaus"), ("virustotal", "VirusTotal")):
+        for key, provider in (("google_safe_browsing", "Google Safe Browsing"), ("openphish", "OpenPhish"), ("urlhaus", "URLhaus"), ("virustotal", "VirusTotal"), ("phishing_database", "Phishing Database")):
             r = by_name.get(provider)
             if r is None:
                 checks[key] = "skipped"  # not applicable for this trust tier
@@ -102,7 +109,9 @@ def analyze_url(
             if len(fetch_result.chain) > 3:
                 signals.append(make("REDIRECT_CHAIN_LONG", f"The link passes through {len(fetch_result.chain) - 1} redirects.", "net", t))
             if fetch_result.outcome == "OK" and fetch_result.body and info.tier == "UNKNOWN" and settings.enable_page_inspection:
-                signals.extend(page.analyze(parsed, fetch_result.body))
+                page_info = page.parse_html(fetch_result.body)
+                final_host = (parse_url(fetch_result.final_url) or parsed).host_ascii
+                signals.extend(page.analyze_info(parsed, page_info, final_host))
                 checks["page"] = "done"
             else:
                 checks["page"] = "skipped"
@@ -118,8 +127,19 @@ def analyze_url(
                 checks["domain_age"] = "unavailable"
         else:
             checks["domain_age"] = "skipped"
+
+        # Real-browser sandbox: only for unknown sites not already decided.
+        decided = any(s.strength == "decisive" for s in signals) or any(s.id in V.FAKE_IDS for s in signals)
+        dead = fetch_result is not None and fetch_result.outcome == "NXDOMAIN"
+        if info.tier == "UNKNOWN" and not parsed.is_ip and not decided and not dead and settings.enable_sandbox:
+            sandbox_result = sandbox.scan(parsed, budget=settings.sandbox_budget_seconds)
+            have_age = bool(domain_facts and domain_facts.age_days is not None)
+            signals.extend(sandbox.to_signals(parsed, sandbox_result, have_age))
+            checks["sandbox"] = {"done": "done", "unavailable": "unavailable"}.get(sandbox_result.status, "skipped")
+        else:
+            checks["sandbox"] = "skipped"
     else:
-        for key in ("google_safe_browsing", "openphish", "urlhaus", "virustotal", "reachability", "domain_age", "page"):
+        for key in ("google_safe_browsing", "openphish", "urlhaus", "virustotal", "reachability", "domain_age", "page", "sandbox"):
             checks[key] = "unavailable" if key in {"google_safe_browsing", "openphish", "reachability"} else "skipped"
 
     destination = None
@@ -165,7 +185,9 @@ def analyze_url(
             if fetch_result else None
         ),
         reputation=[{"provider": r.provider, "status": r.status, "detail": r.detail} for r in rep_results],
-        domain_age_days=domain_facts.age_days if domain_facts else None,
+        domain_age_days=domain_facts.age_days if domain_facts and domain_facts.age_days is not None else (sandbox_result.domain_age_days if sandbox_result else None),
+        page_title=page_info.title[:120] if page_info else "",
+        sandbox=sandbox_result.to_dict() if sandbox_result and sandbox_result.status == "done" else None,
         registrar=domain_facts.registrar if domain_facts else None,
         destination=destination,
         checks=checks,

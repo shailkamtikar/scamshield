@@ -1,0 +1,22 @@
+{
+ "threshold_strict": 2.426,
+ "operating_points": {
+  "0.005": {
+   "threshold": 2.923,
+   "recall_on_openphish": 0.108
+  },
+  "0.01": {
+   "threshold": 2.426,
+   "recall_on_openphish": 0.169
+  },
+  "0.02": {
+   "threshold": 1.934,
+   "recall_on_openphish": 0.265
+  },
+  "0.05": {
+   "threshold": 1.259,
+   "recall_on_openphish": 0.361
+  }
+ },
+ "trained_on": 216000
+}

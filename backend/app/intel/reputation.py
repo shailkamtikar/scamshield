@@ -4,7 +4,7 @@ fails soft: a missing key, quota, timeout or outage yields status
 'unavailable' and the engine simply has less coverage (lower confidence).
 """
 
-import base64
+import hashlib
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
+import numpy as np
 
 from app.config import settings
 from app.engine.signals import Signal, make
@@ -231,6 +232,60 @@ def check_openphish(url: str) -> RepResult:
     return RepResult(name, "clean")
 
 
+# ---------------- Phishing.Database (active phishing domains, free, no key) ----------------
+PHISHDB_URL = "https://raw.githubusercontent.com/Phishing-Database/Phishing.Database/master/phishing-domains-ACTIVE.txt"
+_phishdb: np.ndarray | None = None
+_phishdb_lock = threading.Lock()
+
+
+def _hash64(text: str) -> int:
+    return int.from_bytes(hashlib.blake2b(text.encode("utf-8", "ignore"), digest_size=8).digest(), "little")
+
+
+def load_phishdb() -> int:
+    """Keep ~400k domains as a sorted array of 64-bit hashes (about 3 MB in memory)."""
+    global _phishdb
+    with _phishdb_lock:
+        if _phishdb is not None:
+            return len(_phishdb)
+        cache = CACHE_DIR / "phishdb.npy"
+        try:
+            if cache.exists() and time.time() - cache.stat().st_mtime < 24 * 3600:
+                _phishdb = np.load(cache)
+                return len(_phishdb)
+            with httpx.Client(timeout=httpx.Timeout(40.0, connect=5.0), follow_redirects=True) as c:
+                r = c.get(PHISHDB_URL)
+            r.raise_for_status()
+            values = sorted({_hash64(line.strip().lower()) for line in r.text.splitlines() if line.strip() and not line.startswith("#")})
+            _phishdb = np.array(values, dtype=np.uint64)
+            CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            np.save(cache, _phishdb)
+        except Exception:  # noqa: BLE001
+            if cache.exists():
+                _phishdb = np.load(cache)
+        return 0 if _phishdb is None else len(_phishdb)
+
+
+def check_phishdb(host: str, registrable: str) -> RepResult:
+    name = "Phishing Database"
+    if _phishdb is None:
+        return RepResult(name, "unavailable", "list not loaded")
+    for candidate in {host.lower(), registrable.lower()}:
+        h = np.uint64(_hash64(candidate))
+        i = int(np.searchsorted(_phishdb, h))
+        if i < len(_phishdb) and _phishdb[i] == h:
+            return RepResult(name, "hit", "listed as an active phishing domain", 1)
+    return RepResult(name, "clean")
+
+
+def load_all_lists():
+    for loader in (load_openphish, load_phishdb):
+        try:
+            loader()
+        except Exception:  # noqa: BLE001
+            pass
+
+
 # ---------------- aggregate ----------------
 def check_all(parsed: ParsedUrl, trusted: bool, use_virustotal: bool) -> list[RepResult]:
     """Run every provider concurrently. `trusted` domains skip VirusTotal to save its small quota."""
@@ -238,6 +293,7 @@ def check_all(parsed: ParsedUrl, trusted: bool, use_virustotal: bool) -> list[Re
     url = parsed.url
     jobs = [lambda: check_safe_browsing(url), lambda: check_openphish(url), lambda: check_urlhaus(url, parsed.host_ascii, host_level=not trusted)]
     if not trusted:
+        jobs.append(lambda: check_phishdb(parsed.host_ascii, parsed.registrable))
         if use_virustotal:
             jobs.append(lambda: check_virustotal(parsed.host_ascii))
     with ThreadPoolExecutor(max_workers=len(jobs)) as pool:

@@ -13,6 +13,7 @@ CATALOG: dict[str, tuple[str, int, str, str]] = {
     # --- threat intelligence (decisive) ---
     "FEED_HIT": ("risk", 100, "decisive", "Listed as malicious by a threat feed"),
     "VT_MALICIOUS_MANY": ("risk", 80, "decisive", "Flagged malicious by many antivirus engines"),
+    "ML_DOMAIN_RISK": ("risk", 22, "moderate", "Learned model: this domain name resembles known phishing domains"),
     "VT_MALICIOUS_FEW": ("risk", 25, "moderate", "Flagged by a few antivirus engines"),
     # --- brand / lookalike ---
     "BRAND_LOOKALIKE": ("risk", 60, "strong", "Misspelled lookalike of a known brand"),
@@ -42,10 +43,13 @@ CATALOG: dict[str, tuple[str, int, str, str]] = {
     "DOMAIN_AGE_LT_30D": ("risk", 35, "strong", "Domain registered less than 30 days ago"),
     "DOMAIN_AGE_LT_1Y": ("risk", 8, "weak", "Domain registered less than a year ago"),
     "CERT_NEW": ("risk", 6, "weak", "Brand-new TLS certificate"),
-    "CERT_MISMATCH": ("risk", 25, "moderate", "Certificate does not match the domain"),
+    "CERT_MISMATCH": ("risk", 15, "weak", "The site's security certificate is not valid"),
     "NO_TLS": ("risk", 8, "weak", "Site has no working HTTPS"),
     # --- page inspection ---
-    "LOGIN_FORM_UNTRUSTED": ("risk", 35, "strong", "Login/payment form on an unverified site"),
+    "HOST_FLAGGED_PAGE": ("risk", 90, "decisive", "The hosting provider has flagged this page"),
+    "SANDBOX_MALICIOUS": ("risk", 90, "decisive", "A real browser sandbox judged this page malicious"),
+    "BRAND_MENTION_PAGE": ("risk", 8, "weak", "Page title mentions a brand it may not belong to"),
+    "LOGIN_FORM_UNTRUSTED": ("risk", 12, "weak", "Asks for a password on an unverified site"),
     "FORM_CROSS_DOMAIN": ("risk", 35, "strong", "Form sends data to a different domain"),
     "BRAND_MISMATCH_PAGE": ("risk", 45, "strong", "Page pretends to be a brand it does not belong to"),
     "APK_DOWNLOAD": ("risk", 30, "moderate", "Page pushes an app (APK) download"),
@@ -82,6 +86,7 @@ CATALOG: dict[str, tuple[str, int, str, str]] = {
     "TRUSTED_OFFICIAL": ("trust", 40, "strong", "Verified official domain"),
     "TRUSTED_POPULAR": ("trust", 25, "moderate", "Widely used, well-known site"),
     "DOMAIN_AGE_GT_5Y": ("trust", 12, "moderate", "Domain has existed for more than 5 years"),
+    "SANDBOX_CLEAN": ("trust", 15, "moderate", "A real browser sandbox found nothing malicious"),
     "REPUTATION_CLEAN": ("trust", 10, "moderate", "No threat feed lists this link"),
     "GENUINE_ALERT_PATTERN": ("trust", 15, "moderate", "Matches a genuine bank-alert template"),
     "VERIFIED_SERVICE": ("trust", 40, "strong", "QR points to a verified service"),

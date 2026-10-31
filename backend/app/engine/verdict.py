@@ -10,16 +10,16 @@ from dataclasses import dataclass, field
 from app.engine.signals import Signal, dedupe
 
 BANDS = {"SAFE": (0, 19), "SUSPICIOUS": (20, 59), "DANGEROUS": (60, 100)}
-DECISIVE_IDS = {"FEED_HIT", "VT_MALICIOUS_MANY", "DANGEROUS_SCHEME"}
+DECISIVE_IDS = {"FEED_HIT", "VT_MALICIOUS_MANY", "DANGEROUS_SCHEME", "HOST_FLAGGED_PAGE", "SANDBOX_MALICIOUS"}
 # Structural evidence that a link is fake. Any one of these on a site that is
 # not on a trusted list makes the link DANGEROUS on its own.
 FAKE_IDS = {
     "DOMAIN_GIBBERISH", "HOMOGRAPH", "INVISIBLE_CHARS", "USERINFO_TRICK",
     "RAW_IP", "OBFUSCATED_IP", "BRAND_LOOKALIKE", "BRAND_COMBOSQUAT",
-    "BRAND_MISMATCH_PAGE", "FORM_CROSS_DOMAIN", "BRAND_MISMATCH_LINK",
+    "BRAND_MISMATCH_PAGE", "BRAND_MISMATCH_LINK",
     "UPI_BRAND_PAYEE_MISMATCH",
 }
-UNREACHABLE = {"NXDOMAIN", "CONNECT_FAILED", "TIMEOUT", "NOT_FOUND"}
+UNREACHABLE = {"NXDOMAIN", "CONNECT_FAILED", "TIMEOUT", "NOT_FOUND", "TLS_ERROR", "LOOP", "TOO_MANY_HOPS"}
 
 
 def risk_level_for(verdict: str, score: int | None) -> str:
@@ -96,7 +96,7 @@ def assess_url(
 CHECK_WEIGHTS = {
     "message_rules": 2.0, "qr_payload": 2.0,
     "lexical": 2.0, "trust": 2.0, "google_safe_browsing": 2.0, "openphish": 1.0,
-    "urlhaus": 1.0, "virustotal": 1.0, "reachability": 2.0, "domain_age": 1.0, "page": 1.0,
+    "urlhaus": 1.0, "virustotal": 1.0, "phishing_database": 1.0, "reachability": 2.0, "domain_age": 1.0, "page": 1.0, "sandbox": 2.0,
 }
 
 

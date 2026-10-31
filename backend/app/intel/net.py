@@ -9,6 +9,7 @@ time, hops and bytes. It never runs JavaScript or opens a browser.
 import ipaddress
 import socket
 import ssl
+import time
 from dataclasses import dataclass, field
 from urllib.parse import urljoin, urlsplit
 
@@ -16,6 +17,7 @@ import httpx
 
 MAX_HOPS = 8
 MAX_BYTES = 256 * 1024
+TOTAL_BUDGET = 10.0  # seconds for the whole chain
 ALLOWED_PORTS = {80, 443, 8080, 8443}
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -75,6 +77,7 @@ def fetch(url: str, want_body: bool = False, timeout: float = 4.0) -> FetchResul
     chain = [url]
     current = url
     seen = {url}
+    started = time.time()
 
     with httpx.Client(
         follow_redirects=False,
@@ -83,6 +86,8 @@ def fetch(url: str, want_body: bool = False, timeout: float = 4.0) -> FetchResul
         verify=True,
     ) as client:
         for _ in range(MAX_HOPS + 1):
+            if time.time() - started > TOTAL_BUDGET:
+                return FetchResult("TIMEOUT", current, chain=chain, detail="timed out")
             parts = urlsplit(current)
             host = parts.hostname or ""
             port = parts.port or (443 if parts.scheme == "https" else 80)
@@ -115,7 +120,7 @@ def fetch(url: str, want_body: bool = False, timeout: float = 4.0) -> FetchResul
                         raw = b""
                         for piece in response.iter_bytes():
                             raw += piece
-                            if len(raw) >= MAX_BYTES:
+                            if len(raw) >= MAX_BYTES or time.time() - started > TOTAL_BUDGET:
                                 break
                         body = raw[:MAX_BYTES].decode(response.encoding or "utf-8", errors="replace")
 

@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 
 from app.api._shared import run_investigation, stream_case
 from app.api.uploads import read_image
-from app.engine.analysis import SEV, Case
+from app.engine.analysis import SEV, Case, investigate_sync
 from app.models.investigation import QrTextRequest
 from app.qr.analyze import case_from_payload, case_from_text
 from app.qr.payload import classify
@@ -52,7 +52,17 @@ async def investigate_qr_stream(file: UploadFile = File(...), claimed_organizati
 
     def prepare() -> Case:
         codes = _decode(data)
-        return case_from_payload(classify(codes[0]["text"]), claimed_organization)
+        if len(codes) == 1:
+            return case_from_payload(classify(codes[0]["text"]), claimed_organization)
+        # Several codes: the report is about the worst one, and lists them all.
+        quick = [investigate_sync(case_from_payload(classify(c["text"]), claimed_organization)).result for c in codes]
+        order = sorted(range(len(quick)), key=lambda i: (SEV[quick[i]["verdict"]], quick[i]["risk_score"]))
+        worst = codes[order[-1]]
+        case = case_from_payload(classify(worst["text"]), claimed_organization)
+        case.extra["qr_codes"] = [
+            {"decoded_text": r["decoded_text"], "verdict": r["verdict"], "risk_score": r["risk_score"], "qr": r["qr"]} for r in quick
+        ]
+        return case
 
     return StreamingResponse(
         stream_case(prepare, ("decode", "Decoding the QR code")),

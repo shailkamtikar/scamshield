@@ -1,26 +1,31 @@
+import logging
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.investigate import router as investigate_router
+from app.api.middleware import ProtectMiddleware
 from app.api.investigate_image import router as investigate_image_router
 from app.api.investigate_qr import router as investigate_qr_router
 from app.config import settings
 from app.engine.signals import WEIGHTS_VERSION
 from app.intel import reputation
 
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+
 @asynccontextmanager
 async def lifespan(_app):
-    # Load the phishing feed once so the first request is not slower.
-    try:
-        reputation.load_openphish()
-    except Exception:  # noqa: BLE001
-        pass
+    # Load threat lists in the background so startup is never blocked.
+    threading.Thread(target=reputation.load_all_lists, daemon=True).start()
     yield
 
 
 app = FastAPI(title="ScamShield API", version="2.0.0", lifespan=lifespan)
+
+app.add_middleware(ProtectMiddleware)
 
 # CORS origins come from the CORS_ORIGINS environment variable (comma separated).
 app.add_middleware(

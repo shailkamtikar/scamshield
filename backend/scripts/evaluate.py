@@ -15,6 +15,7 @@ import argparse
 import csv
 import sys
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from app.config import settings
@@ -32,13 +33,21 @@ def main():
     ap.add_argument("--split", default="all")
     ap.add_argument("--show-errors", type=int, default=0)
     ap.add_argument("--no-gate", action="store_true")
+    ap.add_argument("--full", action="store_true", help="real product path: feeds + text-only page fetch + page inspection")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--include-malware", action="store_true", help="count malware-download links (not phishing) in the gate")
     args = ap.parse_args()
 
+    settings.enable_sandbox = False  # keyless quota is small; measured separately
+    if args.full:
+        args.live = True
+    elif args.live:
+        settings.enable_page_inspection = False
+        settings.enable_fetch = False
     if args.live:
-        settings.enable_page_inspection = False  # never download suspicious pages
-        settings.enable_fetch = False  # never even connect to suspicious sites
+        from app.intel import reputation
+
+        reputation.load_all_lists()
 
     rows = list(csv.DictReader(open(ROOT / "data" / "benchmark" / "urls.csv", encoding="utf-8")))
     if not args.include_malware:
@@ -51,18 +60,28 @@ def main():
         import random
         random.Random(1).shuffle(rows)
         rows = rows[: args.limit]
-    tp = fn = fp = tn = 0
+    tp = fn = fp = tn = unverified = 0
     per_cat = defaultdict(lambda: Counter())
     errors = []
-    for r in rows:
+
+    def judge(r):
         parsed = parse_url(r["url"])
         if parsed is None:
-            verdict = "UNPARSEABLE"
-        else:
-            verdict = analyze_url(parsed, network=args.live, inspect_page=False).verdict
+            return "UNPARSEABLE"
+        return analyze_url(parsed, network=args.live, inspect_page=args.full).verdict
+
+    with ThreadPoolExecutor(max_workers=8 if args.live else 1) as pool:
+        verdicts = list(pool.map(judge, rows))
+
+    for r, verdict in zip(rows, verdicts):
         bad = r["label"] == "phish"
-        flagged = verdict in FLAGGED or verdict == "UNPARSEABLE" and bad
         per_cat[r["category"]]["n"] += 1
+        if verdict == "COULD_NOT_VERIFY":  # dead link: nothing to inspect, not counted either way
+            unverified += 1
+            per_cat[r["category"]]["n"] -= 1
+            per_cat[r["category"]]["dead"] += 1
+            continue
+        flagged = verdict in FLAGGED or (verdict == "UNPARSEABLE" and bad)
         if bad and flagged:
             tp += 1
             per_cat[r["category"]]["ok"] += 1
@@ -78,17 +97,17 @@ def main():
 
     detection = tp / max(tp + fn, 1)
     fpr = fp / max(fp + tn, 1)
-    accuracy = (tp + tn) / max(len(rows), 1)
+    accuracy = (tp + tn) / max(tp + tn + fp + fn, 1)
     precision = tp / max(tp + fp, 1)
 
-    print(f"mode={'LIVE feeds' if args.live else 'STATIC (no network)'} split={args.split} n={len(rows)}")
+    print(f"mode={'FULL (feeds + page fetch + page inspection)' if args.full else 'LIVE feeds' if args.live else 'STATIC (no network)'} split={args.split} n={len(rows)} dead-links-excluded={unverified}")
     print(f"detection rate : {detection:.1%}  ({tp}/{tp + fn})")
     print(f"false positives: {fpr:.1%}  ({fp}/{fp + tn})")
     print(f"accuracy       : {accuracy:.1%}")
     print(f"precision      : {precision:.1%}")
     print("\nper category (correct/total):")
     for cat, c in sorted(per_cat.items()):
-        print(f"  {cat:26} {c['ok']:4}/{c['n']:<4} {c['ok'] / c['n']:.0%}")
+        print(f"  {cat:26} {c['ok']:4}/{c['n']:<4} {c['ok'] / max(c['n'], 1):.0%}   dead {c['dead']}")
     if args.show_errors:
         print("\nerrors:")
         for kind, cat, url, verdict in errors[: args.show_errors]:

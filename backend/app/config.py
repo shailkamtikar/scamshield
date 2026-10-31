@@ -34,7 +34,7 @@ class Settings(BaseSettings):
 
     # The lighter model answers in ~1s versus 5-40s, so it goes first by default.
     gemini_fast_first: bool = True
-    gemini_timeout_seconds: int = 15
+    gemini_timeout_seconds: int = 10
 
     tesseract_cmd: str | None = Field(default_factory=_default_tesseract)
 
@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     safe_browsing_api_key: str | None = None
     virustotal_api_key: str | None = None
     urlhaus_auth_key: str | None = None
+    urlscan_api_key: str | None = None
     api_access_key: str | None = None
 
     # Feature switches (all default on).
@@ -54,6 +55,13 @@ class Settings(BaseSettings):
     enable_page_inspection: bool = True
     enable_fetch: bool = True  # connect to links to follow redirects / check they exist
     enable_vision: bool = True
+    enable_sandbox: bool = True
+    sandbox_budget_seconds: int = 20
+
+    # Public-endpoint protection
+    rate_limit_per_minute: int = 20
+    rate_limit_per_day: int = 300
+    trust_proxy_headers: bool = False  # set true behind Render's proxy
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -73,6 +81,7 @@ class Settings(BaseSettings):
             "safe_browsing": bool(self.safe_browsing_api_key),
             "virustotal": bool(self.virustotal_api_key),
             "urlhaus": bool(self.urlhaus_auth_key),
+            "sandbox_live_scan": bool(self.urlscan_api_key),
             "tesseract": bool(self.tesseract_cmd),
         }
 
