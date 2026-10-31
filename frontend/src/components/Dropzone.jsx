@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { ImageUp, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -62,11 +62,10 @@ export default function Dropzone({ file, onFile, title, subtitle }) {
         } ${file ? "cursor-default" : "cursor-pointer"}`}
       >
         <input ref={input} type="file" accept={TYPES.join(",")} className="hidden" onChange={(e) => accept(e.target.files?.[0])} />
-        <AnimatePresence mode="wait">
-          {file && preview ? (
-            <motion.div key="preview" className="relative flex w-full flex-col items-center gap-5 p-5 sm:flex-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          {file ? (
+            <motion.div key="preview" className="relative flex w-full flex-col items-center gap-5 p-5 sm:flex-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="relative h-[170px] w-[170px] shrink-0 overflow-hidden rounded-lg border border-line-strong bg-ink-3">
-                <img src={preview} alt="Selected upload" className="h-full w-full object-contain" />
+                {preview && <img src={preview} alt="Selected upload" className="h-full w-full object-contain" />}
                 <div className="scanline absolute inset-x-0 h-12" style={{ animation: "scan-sweep 2.6s linear infinite" }} />
               </div>
               <div className="min-w-0 text-center sm:text-left">
@@ -79,7 +78,7 @@ export default function Dropzone({ file, onFile, title, subtitle }) {
               </div>
             </motion.div>
           ) : (
-            <motion.div key="empty" className="flex flex-col items-center gap-3 px-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="empty" className="flex flex-col items-center gap-3 px-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <motion.div animate={over ? { y: -6, scale: 1.1 } : { y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}>
                 <ImageUp size={34} strokeWidth={1.3} className="tint-text" />
               </motion.div>
@@ -88,7 +87,6 @@ export default function Dropzone({ file, onFile, title, subtitle }) {
               <div className="text-[12px] text-faint">PNG, JPEG or WEBP · up to 8 MB · or paste with Ctrl+V</div>
             </motion.div>
           )}
-        </AnimatePresence>
       </div>
       {error && <p role="alert" className="mt-2 text-[13px] text-danger">{error}</p>}
     </div>
