@@ -158,6 +158,14 @@ def analyze(parsed: ParsedUrl, trust: TrustInfo, extra_brands: tuple[str, ...] =
         add("MANY_HYPHENS", "The domain name contains many hyphens.")
 
     if trust.tier == "POPULAR":
+        # Popularity belongs to the registrable domain only. "sbi-yono-update.in.net" borrows the rank of
+        # in.net, so another organisation's name in the subdomain still counts against the link.
+        for word in [w for label in sub_labels for w in _words(label)]:
+            brand, _ = _match_brand(word, brand_tokens(), allow_substring=False)
+            if brand is not None and word not in GENERIC_BRAND_WORDS and len(word) >= 3:
+                if parsed.registrable.lower() not in {d.lower() for d in brand.domains}:
+                    add("BRAND_IN_SUBDOMAIN_OR_PATH", f"The address mentions '{word}' ({brand.name}) but the site is {parsed.registrable}.")
+                    break
         return signals
 
     tokens = dict(brand_tokens())

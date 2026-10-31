@@ -44,6 +44,8 @@ describe("verdict config", () => {
     expect(getVerdict("DANGEROUS").word).toBe("Dangerous");
     expect(getVerdict("SAFE", "verified").word).toBe("Safe");
     expect(getVerdict("SAFE", "no_problems_found").word).toBe("Clear");
+    expect(getVerdict("SAFE", "promotion").word).toBe("Promotion");
+    expect(getVerdict("SAFE", "promotion_unverified").word).toBe("Promotion");
     expect(getVerdict("SAFE", "valid_payment").headline).toContain("payment");
   });
 });

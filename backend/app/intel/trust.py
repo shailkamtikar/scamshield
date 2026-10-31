@@ -21,7 +21,7 @@ _extractor = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
 # accredited institutions (registration is restricted).
 OFFICIAL_SUFFIXES = {
     "gov.in", "nic.in", "ac.in", "edu.in", "res.in", "mil.in", "gov", "edu",
-    "mil", "gov.uk", "ac.uk", "gov.au", "edu.au", "gc.ca", "bank.in", "sbi",
+    "mil", "gov.uk", "ac.uk", "gov.au", "edu.au", "gc.ca", "bank.in", "fin.in", "sbi",
 }
 
 
@@ -147,7 +147,9 @@ def classify(parsed: ParsedUrl) -> TrustInfo:
     if brand:
         return TrustInfo("OFFICIAL", brand=brand.name, category=brand.category, shortener=shortener, reason=f"official {brand.name} domain")
 
-    if parsed.suffix.lower() in OFFICIAL_SUFFIXES or any(registrable.endswith("." + s) for s in OFFICIAL_SUFFIXES):
+    # Judge the whole host: "hdfc.bank.in" is an ordinary subdomain of the restricted bank.in zone, so the
+    # registrable part alone ("bank.in") would hide that every name under it was approved for a bank.
+    if parsed.suffix.lower() in OFFICIAL_SUFFIXES or any(host == s or host.endswith("." + s) for s in OFFICIAL_SUFFIXES):
         return TrustInfo("OFFICIAL", brand="Government / academic domain", category="government", shortener=shortener, reason=f".{parsed.suffix} is a restricted domain")
 
     rank = tranco_ranks().get(registrable)

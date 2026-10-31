@@ -45,7 +45,20 @@ The 91.9 % row is the honest figure for phishing nobody has listed yet. It still
 |---|---|---|
 | 542 template messages (written with the rules, so not independent) | 100 % / 0 % false alarms | – |
 | 51 hand-written messages (tuned afterwards, so not independent) | 100 % / 0 % | – |
-| **48 messages written after the engine was frozen (`messages_heldout.csv`)** | **54 % detection, 8 % false alarms** | **96 % detection, 8 % false alarms** (one miss: a Telegram investment link) |
+| **48 messages written after the engine was frozen (`messages_heldout.csv`)** | **50 % detection, 0 % false alarms** (was 54 % / 8 %; the 8 % false alarms were friends asking for a Wi-Fi password) | **96 % detection** (measured before the latest rule changes; AI results are not re-run to save quota) |
+
+### Genuine notices from many sectors (`backend/scripts/eval_genuine.py`)
+
+105 genuine messages (bank alerts, OTPs, KYC reminders from banks / FASTag / wallets / mutual funds, telecom, electricity and gas, metro / rail / cabs, e-commerce and delivery, government, brokers, insurance, health, schools) plus 20 ordinary promotions, written separately from the rules.
+
+| | First run | After fixes |
+|---|---|---|
+| Genuine messages flagged SUSPICIOUS / DANGEROUS | 11 / 105 (10.5 %) | **0 / 105** |
+| Promotions flagged | 1 DANGEROUS (a real HDFC short link) | **0 / 20**, 18 recognised as promotions |
+
+The fixes were to *classes* of failure, not to the messages: pressure wording (KYC due, will be disconnected, refund credited) only counts when the message also gives a link, number or chat we cannot verify; every name under restricted bank zones such as `bank.in` is official; "update your PAN" is KYC wording, not a request for a secret; "enter your password to open it" and Wi-Fi passwords are not account secrets; "download the app from the Play Store" is not an APK install. A popular domain no longer vouches for another brand's name in its subdomain (`sbi-yono-update.in.net`). These are rules-only numbers; the pasted real examples that exposed the problems are kept as regression tests.
+
+Honest caveats: the 105 are still written by us, not collected from real inboxes, so the real false-alarm rate on messages nobody here has seen is unknown until more real ones are tested. A scare message with *no* link, number or app (for example just "your account will be blocked today") is no longer scored as a scam by the rules alone.
 
 So the *rules alone* miss scams written in wording they weren't designed for; Gemini's second opinion is what catches them. If Gemini is unavailable (no key, quota, outage) the engine falls back to the rules and accuracy on new scam scripts drops to roughly the first column. A learned local text model was tried and **rejected** because it did poorly on this held-out set (71 % detection, 29 % false alarms).
 

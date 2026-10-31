@@ -1,0 +1,126 @@
+text,label,category
+"Rs 2,500.00 debited from A/c XX4821 on 31-10-26 to VPA swiggy@icici. UPI Ref 628374659201. Not you? Call 1800 1080 / SMS BLOCK UPI to 9215676766. -HDFC Bank",genuine,bank_txn
+"Dear Customer, Rs 15,000.00 credited to your A/c XX9032 on 30-Oct-26 by NEFT from ACME PVT LTD. Avl Bal Rs 48,210.55. -SBI",genuine,bank_txn
+"INR 1,249.00 spent on ICICI Bank Card XX3007 on 29-Oct-26 at AMAZON PAY. Avl Limit INR 1,84,000. If not you, call 1800 1080 or block card on www.icicibank.com/cards",genuine,bank_txn
+"Your OTP for transaction of Rs 899.00 at Flipkart is 482913. Valid for 5 minutes. Do not share this OTP with anyone. -Axis Bank",genuine,otp
+"482913 is your OTP for logging in to Zerodha Kite. Do not share it with anyone. It is valid for 10 minutes.",genuine,otp
+"<#> 7731 is your Swiggy verification code. Never share it with anyone. Swiggy will never ask for it.",genuine,otp
+"Full KYC Due in 90 days: For your One Pune NCMC card from HDFC Bank. Update it now here: https://1.hdfc.bank.in/HDFCBK/s/AAvyG770 T&C.",genuine,kyc_official
+"Dear Customer, your Re-KYC is due on 31-Dec-26. Please visit your nearest SBI branch with ID and address proof or update through YONO. Ignore if already done. -SBI",genuine,kyc_official
+"Your FASTag KYC is pending. Update KYC on the IHMCL FASTag app or visit fastag.ihmcl.com to avoid deactivation. -IHMCL",genuine,kyc_official
+"Dear Investor, KYC of your mutual fund folio 1234567/89 has been verified successfully. No further action needed. -CAMS",genuine,kyc_official
+"Hi, as per RBI guidelines periodic KYC update is due for your Paytm Payments Bank wallet. Update in the app under Profile > KYC. Never share OTP with anyone.",genuine,kyc_official
+"Your Aadhaar-linked mobile OTP for e-KYC with Airtel is 553920. Do not share. Valid for 10 mins.",genuine,otp
+"Dear Customer, your electricity bill of Rs 1,642 for consumer no 2210045588 is due on 05-Nov-26. Pay on https://www.mahadiscom.in or the MSEDCL app. -MSEDCL",genuine,utility
+"BESCOM: Bill for RR No XXXX4412 Rs 874.00 generated. Due date 10-11-2026. Pay at bescom.karnataka.gov.in",genuine,utility
+"Mahanagar Gas: your bill for Oct-26 is Rs 512. Pay online at mahanagargas.com or UPI. Customer care 1800 266 9944.",genuine,utility
+"Dear Customer, your Jio recharge of Rs 299 is successful. Plan valid till 28-Nov-26. 1.5 GB/day. Download MyJio: https://www.jio.com/app -Jio",genuine,telecom
+"Airtel: Your postpaid bill of Rs 749 is generated for 25-Oct to 24-Nov. Pay via Airtel Thanks app or www.airtel.in/pay-bill by 10 Nov.",genuine,telecom
+"Vi: 90% of your daily data is used. Recharge now with Rs 19 for 1GB extra. Visit myvi.in or the Vi app.",genuine,telecom
+"IRCTC: Booking confirmed. PNR 4521897630 Train 12951 MUMBAI CENTRAL-NEW DELHI on 05-Nov-26 Class 3A Fare Rs 2,215. Happy journey. -IRCTC",genuine,transport
+"Your Ola ride with driver Ramesh (MH12 AB 4321) is arriving in 3 mins. OTP 4471. Track: https://ola.in/trip",genuine,transport
+"Dear Passenger, your Pune Metro smart card balance is low (Rs 32). Recharge at any station or via the Pune Metro app. -Maha Metro",genuine,transport
+"Your Uber trip ended. Fare Rs 218.50 charged to Paytm UPI. Rate your driver in the app.",genuine,transport
+"FASTag: Rs 85.00 deducted at Khed Shivapur toll plaza on 30-10-26. Bal Rs 412.00. -ICICI Bank FASTag",genuine,transport
+"Your Amazon order #407-2284591-3380317 has been shipped and will arrive by Mon, 03 Nov. Track: https://amzn.in/d/3xKq9Zn",genuine,ecommerce
+"Flipkart: Your order for Boat Airdopes is out for delivery today. Delivery OTP 7741. Share it only with the delivery executive.",genuine,ecommerce
+"Myntra: your return for order MYN-77412 is picked up. Refund of Rs 1,299 will be credited to source account in 3-5 days.",genuine,ecommerce
+"Delhivery: Your shipment AWB 31872650011 from Meesho is out for delivery today. Track on delhivery.com. Call 1800 120 4545 for help.",genuine,delivery
+"BlueDart: Shipment 78120045632 is scheduled for delivery between 2pm and 6pm today. -Blue Dart Express",genuine,delivery
+"India Post: Speed post article EE123456789IN delivered at Pune GPO on 28-10-26. Track at indiapost.gov.in",genuine,delivery
+"Zomato: Your order from Behrouz Biryani is on its way. Rider Imran will reach in 12 mins. Order total Rs 689.",genuine,food
+"Swiggy Instamart: Your order has been delivered. Total Rs 342. Rate your experience in the app.",genuine,food
+"Netflix: Your plan renews on 3 Nov for Rs 649. Manage membership at netflix.com/youraccount",genuine,ott
+"Your Hotstar Super subscription expires in 3 days. Renew from the app to keep watching. -Disney+ Hotstar",genuine,ott
+"Spotify: Your Premium Individual plan has been renewed for Rs 119. See your receipt at spotify.com/account",genuine,ott
+"Dear Parent, school fees for Term 2 of Aarav Kulkarni (Class 7B) are due by 15-Nov-26. Pay through the school portal or visit the accounts office. -DPS Pune",genuine,school
+"Reminder: PTM for Class 9 is on Saturday 8 Nov, 10am to 1pm. Please carry the report card. -Principal",genuine,school
+"SSC results for Seat No B123456 have been declared. Check at mahresult.nic.in. -Maharashtra State Board",genuine,school
+"EPFO: Rs 3,200 credited to your PF account UAN 1012XXXX45 for Oct-26. Check passbook at passbook.epfindia.gov.in",genuine,gov
+"Income Tax Department: Refund of Rs 14,320 for AY 2025-26 has been processed and credited to your account XX4821. Check status on incometax.gov.in",genuine,gov
+"Dear Citizen, your DigiLocker account has been created successfully. Access your documents at digilocker.gov.in. -Govt of India",genuine,gov
+"mAadhaar: Your Aadhaar address update request SRN 1234-5678 has been received. Track at myaadhaar.uidai.gov.in",genuine,gov
+"Passport Seva: Your appointment is confirmed at PSK Pune on 12-Nov-26 at 10:30. ARN PN1234567890. Carry original documents. -MEA",genuine,gov
+"CoWIN: Your vaccination certificate is ready. Download from cowin.gov.in or DigiLocker.",genuine,gov
+"Zerodha: Funds of Rs 25,000 added to your trading account. Available margin Rs 31,420. -Zerodha",genuine,broker
+"Groww: Your SIP of Rs 5,000 in Parag Parikh Flexi Cap Fund was executed on 30-Oct. Units allotted 61.222.",genuine,broker
+"NSE: Your Funds/Securities balance statement for Oct-26 has been sent to your registered email. Visit nseindia.com for details.",genuine,broker
+"Dear Investor, your demat account statement for Oct-26 is available on cdslindia.com. -CDSL",genuine,broker
+"LIC: Premium of Rs 12,480 for policy 7821XXXX is due on 20-Nov-26. Pay on licindia.in or via LIC Pay. Grace period applies.",genuine,insurance
+"HDFC Life: Thank you for your premium payment of Rs 8,000 on policy 20456789. Receipt available at hdfclife.com.",genuine,insurance
+"Star Health: Your claim 00123456 has been approved for Rs 42,000. Amount will be credited in 2 working days.",genuine,insurance
+"Your credit card statement for HDFC Bank Card XX9981 is generated. Total due Rs 14,230. Min due Rs 1,500. Due 18-Nov-26. Pay via NetBanking or PayZapp.",genuine,card_statement
+"EMI of Rs 6,540 for your Bajaj Finserv loan A/c 3345XXXX is due on 05-Nov-26. Ensure balance in your account to avoid charges. -Bajaj Finance",genuine,loan
+"Dear Customer, your home loan EMI Rs 28,300 has been debited on 05-Nov-26. Outstanding principal Rs 31,40,000. -ICICI Bank",genuine,loan
+"Dear Customer, a cheque no 000123 for Rs 12,000 has been presented for clearing on your A/c XX4821. If not issued by you, contact branch immediately. -Kotak Bank",genuine,bank_txn
+"Dear Customer, your debit card ending 4821 will expire on 11/26. A new card has been dispatched to your registered address. Activate it at ATM using PIN generation. -Axis Bank",genuine,bank_notice
+"Dear Customer, Netbanking password change was successful. If you did not do this, call 1800 202 6161 immediately. -Axis Bank",genuine,bank_notice
+"Dear SBI User, your A/c XX1234 has been credited with Rs 450 as interest for the quarter. Avl bal Rs 12,408. -SBI",genuine,bank_txn
+"UPI: Rs 120.00 paid to Chai Point via PhonePe. UPI Ref No 628374659222. Bal Rs 4,310. Questions? Call 080-68727374.",genuine,bank_txn
+"You have received Rs 500 from Rahul Sharma on Google Pay. UPI ID: rahul.sharma@okaxis.",genuine,bank_txn
+"Dear customer, your standing instruction for Rs 1,000 to SBI Mutual Fund has failed due to insufficient balance. Please maintain balance. -ICICI Bank",genuine,bank_notice
+"Your Apollo Hospitals appointment with Dr. Mehta is confirmed for 04-Nov-26 at 11:00 AM. Reply C to cancel. Reg no 8821.",genuine,health
+"Lab report of Mr. Kamtikar (Sample ID 55012) is ready. Download from reports.thyrocare.com using your registered mobile.",genuine,health
+"Practo: Your consultation with Dr. Sen is starting in 15 minutes. Join: https://www.practo.com/consult/abc123",genuine,health
+"Dear Resident, water supply in Kothrud will be interrupted on 02-Nov-26 from 10am to 4pm for maintenance. -PMC Pune",genuine,civic
+"Traffic e-challan: Vehicle MH12AB1234 has an e-challan of Rs 500 dated 25-Oct-26. Pay or contest at echallan.parivahan.gov.in. -Parivahan",genuine,gov
+"Your Rapido ride is confirmed. Captain Suresh, MH14 CD 5566. OTP 2298.",genuine,transport
+"Your MakeMyTrip booking MMT-8821 is confirmed. IndiGo 6E 204 Pune to Delhi on 07-Nov-26 at 06:15. Web check-in opens 48 hours before departure.",genuine,travel
+"Your OYO booking at OYO 12345 Hotel Sunrise, Goa is confirmed for 14-Nov to 16-Nov. Booking ID OYO88123. Pay at hotel Rs 2,400.",genuine,travel
+"BookMyShow: Your tickets for Dune Part Three, 7:30 PM, INOX Amanora are confirmed. Booking ID 7ABCD2. Show the QR at the cinema.",genuine,travel
+"PhonePe: Your mobile recharge of Rs 239 for 98XXXXXX45 was successful. Ref 7721.",genuine,telecom
+"Dear Customer, your LPG cylinder booking is confirmed. Delivery code 4412. Delivery within 2 days. Indane Gas.",genuine,utility
+"HPCL: Your booking ID 3345 for refill is confirmed. Cylinder will be delivered by 02-Nov. Do not share the delivery OTP before receiving the cylinder.",genuine,utility
+"Dear Customer, your PNB A/c XX5502 is credited by Rs 20,000 on 29-Oct. Info: IMPS/628374/Rent. Bal Rs 31,222. -PNB",genuine,bank_txn
+"Your Kotak 811 account has been opened successfully. Complete video KYC in the app within 30 days to continue enjoying full limits. -Kotak Mahindra Bank",genuine,kyc_official
+"Dear Customer, as per RBI directive, please update your PAN in your bank account before 31-Dec-26. Visit your home branch or use Net Banking. We never ask for OTP/PIN over call or SMS. -Union Bank of India",genuine,kyc_official
+"Dear Customer, your Aadhaar seeding with A/c XX8841 is complete. DBT payments will now be credited. -Bank of Maharashtra",genuine,kyc_official
+"Your Amazon Pay balance has been updated. Rs 500 added from gift card. Check balance in the Amazon app. If you did not do this, contact Amazon at amazon.in/contact-us.",genuine,ecommerce
+"Google: G-482913 is your Google verification code.",genuine,otp
+"WhatsApp code 482-913. You can also tap this link to verify your phone: v.whatsapp.com/482913. Don't share this code.",genuine,otp
+"Your Microsoft account security code is 4829137. Don't share it.",genuine,otp
+"Dear user, your BSNL broadband bill of Rs 499 is due on 07-Nov-26. Pay at selfcare.bsnl.co.in or BSNL Selfcare app.",genuine,telecom
+"Welcome to Tata Power! Your online account is now active. Download the app from the Play Store or visit tatapower.com to view and pay bills.",genuine,utility
+"Dear Customer, your DTH recharge of Rs 350 on Tata Play ID 1012XXXX is successful. Enjoy uninterrupted viewing. -Tata Play",genuine,telecom
+"Reminder from your CA: GST return GSTR-3B for Oct-26 is due on 20 Nov. Please send purchase invoices by 10 Nov. Thanks, Mehta & Associates",genuine,personal
+"Hi, your cab to the airport is booked for 5:45 AM tomorrow. Driver will call you 15 min before. Thanks - Savaari Car Rentals",genuine,travel
+"Dear Customer, welcome to ICICI Bank Coral Credit Card! Your card will reach you in 7 working days. Track at icicibank.com/track. Never share card details or OTP with anyone.",genuine,bank_notice
+"Dear Member, your ESIC contribution for Oct-26 has been received. Check your details on esic.gov.in. -ESIC",genuine,gov
+"Dear Customer, Transaction of Rs 5,000 at ATM cash withdrawal on 29-Oct-26 was declined due to incorrect PIN. After 3 wrong attempts your card may be temporarily blocked. If this was not you, call 1800 1080. -HDFC Bank",genuine,bank_notice
+"Your Ola Money wallet has been blocked as per RBI instructions as KYC was not completed. Complete KYC in the Ola app or at any partner outlet to resume. -Ola",genuine,kyc_official
+"Your password for Zoho Mail was changed on 30 Oct 2026 at 10:42 IST. If this was not you, reset it at https://accounts.zoho.in/signin?forgot or contact support.",genuine,otp
+"Urgent: Your Jio SIM will be deactivated if the mandatory re-verification is not completed. Visit your nearest Jio Store with Aadhaar and photo. Dear customer please ignore if done. -Jio",genuine,telecom
+"Hello, this is a reminder that your electricity connection will be disconnected on 10-11-26 if the pending bill of Rs 2,340 is not paid. Pay at bescom.karnataka.gov.in or at the nearest BESCOM office to avoid disconnection.",genuine,utility
+"Your Ather 450X service is due. Book a slot at https://www.atherenergy.com/service or call 1800 123 4567. -Ather Energy",genuine,personal
+"Dear Customer, your account has been temporarily restricted as per RBI norms due to incomplete KYC. Please visit your branch with Aadhaar and PAN or complete video KYC on the official app to restore access. -IDFC FIRST Bank",genuine,kyc_official
+"Verification: Your Paytm account login OTP is 551029. Paytm never calls to ask for OTP. Do not share.",genuine,otp
+"Dear Customer, a request for e-mandate of Rs 649 (Netflix) has been received on your card XX3007. Approve via the bank app by 2 Nov. -Axis Bank",genuine,bank_notice
+"Dear Customer, due to a system upgrade, NetBanking will be unavailable on 02-Nov from 12am to 4am. UPI will continue to work. -Bank of Baroda",genuine,bank_notice
+"Your Dream11 withdrawal of Rs 1,200 has been initiated and will reach your bank account in 1-2 days. -Dream11",genuine,personal
+"Hi Shail, your Cult.fit membership expires on 10 Nov. Renew in the app with 15% off. Visit cult.fit/renew",genuine,personal
+"SMS BLOCK 4821 to 9215676766 to block your HDFC Bank credit card XX4821 if you did not make this transaction of Rs 24,999 at CROMA. Do not share OTP, CVV or PIN with anyone.",genuine,bank_notice
+"Greetings from Axis Bank. Your credit card limit has been increased to Rs 2,00,000. No action needed. To manage, open the Axis Mobile app.",genuine,bank_notice
+"Your Zepto order is arriving in 9 minutes. Total Rs 487. Pay by UPI at the door if needed.",genuine,food
+"Dear Customer, your HDFC Bank Credit Card XX9981 has been successfully activated for international usage until 30-Nov-26. -HDFC Bank",genuine,bank_notice
+"Dear Customer, your loan application ID 88123 with Tata Capital is approved. Our executive will contact you within 24 hours. We never ask for fees upfront. -Tata Capital",genuine,loan
+"Dear Customer, Rs 1.00 will be debited from your account for verification of the autopay mandate for Hotstar. Approve via your UPI app within 30 minutes. -PhonePe",genuine,bank_notice
+"PROMO: Big Billion Days sale is live! Up to 80% off on electronics. Shop now at flipkart.com/bbd. T&C apply. -Flipkart",promo,promo
+"Swiggy One: Free delivery on all orders above Rs 199 this weekend! Order now: https://swiggy.com/one",promo,promo
+"HDFC Bank: Pre-approved personal loan of Rs 5,00,000 for you at 10.5%. Apply instantly: https://hdfcbk.io/HDFCBK/s/Qk92bn T&C apply.",promo,promo
+"Dear Customer, upgrade to Airtel Xstream Fiber 100 Mbps at Rs 499/month. Book at airtel.in/fiber or call 121. -Airtel",promo,promo
+"Mega sale at Reliance Digital! Flat Rs 5,000 off on TVs. Visit your nearest store. Offer valid till 3 Nov. T&C apply.",promo,promo
+"Tata Neu: Get 5% NeuCoins on all Tata brands. Shop now: https://www.tataneu.com/offers",promo,promo
+"Zomato Gold: Get a free membership for 3 months. Claim in the app. T&C apply.",promo,promo
+"Diwali Dhamaka at Tanishq! Making charges waived on gold jewellery. Visit tanishq.co.in or your nearest store.",promo,promo
+"Amazon Great Indian Festival starts tonight at 12 AM. Prime members get early access. Shop at amazon.in/gif",promo,promo
+"Upgrade your phone with Rs 8,000 exchange bonus on Samsung Galaxy at samsung.com/in/offers. Limited period offer.",promo,promo
+"Bajaj Finserv: Instant personal loan up to Rs 25 lakh. Apply in 5 mins: https://bit.ly/3xYz9aB T&C apply.",promo,promo
+"Last few hours! 50% off on Myntra EORS. Shop now myntra.com/eors. Unsubscribe: reply STOP",promo,promo
+"Congratulations! You are eligible for a lifetime-free credit card from IDFC FIRST Bank. Apply now: idfcfirstbank.com/credit-card T&C apply.",promo,promo
+"Ola Electric: Book your S1 Pro for Rs 999 and get Rs 10,000 off. Offer ends 5 Nov. olaelectric.com",promo,promo
+"Hey! Your friend invited you to Groww. Sign up using code SHAIL50 and get Rs 100 on your first investment. https://groww.in/invite",promo,promo
+"Get Rs 150 cashback on your first Cred bill payment. Download Cred: https://cred.club/invite T&C apply.",promo,promo
+"New launch! 2 BHK flats in Baner from Rs 78 lakh. Book a site visit: 9822012345. RERA registered. -Kolte Patil",promo,promo
+"Join our Zumba classes starting Nov 1. First class free. Call 9890123456 or visit us at FC Road. -FitZone Pune",promo,promo
+"Binge on Netflix with Jio Fiber Rs 999 plan. Upgrade at jio.com/fiber. T&C apply.",promo,promo
+"Insurance renewal offer: Renew your car insurance with ICICI Lombard and save up to 60%. Renew at icicilombard.com/renew",promo,promo

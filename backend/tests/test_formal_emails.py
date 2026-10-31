@@ -80,7 +80,7 @@ def test_second_opinion_can_still_catch_a_new_script(monkeypatch):
     assert r["verdict"] == "SUSPICIOUS" and "L1_LLM_SECOND_OPINION" in r["decision_path"]
 
 
-@pytest.mark.xfail(reason="known gap: 'enter your password to open it' is still read as a credential request by the rules", strict=True)
+
 def test_bank_mail_naming_its_own_address_is_not_raised(monkeypatch):
     text = "Dear Customer, your ICICI Bank GST invoice is attached. Please add gstinvoice@icicibank.com to your safe sender list and enter your password to open it."
     r = _run_second_opinion(monkeypatch, text, fake(asks_for="secret_code_or_password", evidence_quote="enter your password to open it"))

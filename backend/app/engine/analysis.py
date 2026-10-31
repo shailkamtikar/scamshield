@@ -12,7 +12,7 @@ from app.engine import message as msg_engine
 from app.engine import verdict as V
 from app.engine.signals import WEIGHTS_VERSION, Signal, dedupe, make
 from app.engine.url_analysis import UrlReport, analyze_url
-from app.intel.trust import brand_tokens
+from app.intel.trust import brand_tokens, is_shortener
 from app.intel.urls import ParsedUrl, extract_urls
 
 MAX_URLS = 6
@@ -23,6 +23,45 @@ RISKY_CONTEXT_IDS = {
     "FEAR_OR_THREAT", "CREDENTIAL_REQUEST", "KYC_UPDATE", "FINANCIAL_PRESSURE", "PRIZE_LOTTERY",
     "ARREST_THREAT", "JOB_TASK_SCAM", "APK_INSTALL", "UPI_COLLECT_SCAM", "REMOTE_ACCESS_APP", "INVESTMENT_SCAM",
 }
+
+
+# Pressure language that only matters when it comes with a way to act on it. A notice that says "KYC due",
+# "will be disconnected" or "refund credited" but offers no link, number or app we cannot verify has nothing to
+# click, call or install, so it is informational. Scams always carry such a channel.
+SOFT_IDS = {"URGENCY", "FEAR_OR_THREAT", "KYC_UPDATE", "FINANCIAL_PRESSURE", "SUSPICIOUS_CTA", "PHONE_CALL_TO_ACTION"}
+TOLL_FREE = ("1800", "1860")
+
+
+def _has_unverified_channel(case: "Case") -> bool:
+    """True if the message points to a link, number or chat we cannot tie to the sender's own organisation."""
+    for r in case.url_reports:
+        if r.trust["tier"] not in {"OFFICIAL", "POPULAR"} or r.trust.get("platform") or r.verdict != "SAFE" or is_shortener(r.host):
+            return True
+    entities = case.msg.entities if case.msg else {}
+    if any(not p.lstrip("+").removeprefix("91").startswith(TOLL_FREE) for p in entities.get("phones", [])):
+        return True
+    if entities.get("upi_ids"):
+        return True
+    return bool(re.search(r"\b(?:whatsapp|telegram|signal)\b", case.message, re.I))
+
+
+# Ways a real institution tells you to resolve something that do not involve a link we cannot verify.
+SELF_SERVICE = re.compile(
+    r"\b(?:in|on|via|through|using|from) (?:the |our |your )?(?:\w+ ){0,2}(?:app|website|portal|net ?banking|mobile banking|play ?store|app ?store)\b"
+    r"|\bvisit (?:your |the |any |our )?(?:nearest |home |local |closest )?(?:\w+ )?(?:branch|store|office|outlet|centre|center|station|counter)\b"
+    r"|\b(?:ignore|disregard) (?:this )?(?:message )?if (?:already )?(?:done|completed|paid)\b|\bno (?:further )?action (?:is )?(?:needed|required)\b"
+    r"|\bcontact (?:your )?(?:home )?(?:branch|bank|relationship manager)\b",
+    re.I,
+)
+
+
+def _has_self_service_route(case: "Case") -> bool:
+    if any(r.trust["tier"] == "OFFICIAL" for r in case.url_reports):
+        return True
+    entities = case.msg.entities if case.msg else {}
+    if any(p.lstrip("+").removeprefix("91").startswith(TOLL_FREE) for p in entities.get("phones", [])):
+        return True
+    return bool(SELF_SERVICE.search(case.message))
 
 
 @dataclass
@@ -85,7 +124,12 @@ def step_urls(case: Case) -> Case:
 def step_decide(case: Case) -> Case:
     msg_signals = list(case.msg.signals if case.msg else []) + case.extra_signals
     msg_signals = dedupe(msg_signals)
+    informational: list[str] = []
     ids = {s.id for s in msg_signals if s.polarity == "risk"}
+    if ids and ids <= SOFT_IDS and not _has_unverified_channel(case) and (ids == {"FINANCIAL_PRESSURE"} or _has_self_service_route(case) or case.msg.message_type in {"otp", "transaction"}):
+        informational = [s.label for s in msg_signals if s.polarity == "risk"]
+        msg_signals = [s for s in msg_signals if s.polarity != "risk"]
+        ids = set()
     strong_part = sum(s.points for s in msg_signals if s.polarity == "risk" and s.strength != "weak")
     weak_part = sum(s.points for s in msg_signals if s.polarity == "risk" and s.strength == "weak")
     raw_msg_risk = strong_part + (min(weak_part, 8) if strong_part else 0)  # ordinary words alone add nothing
@@ -190,13 +234,17 @@ def step_decide(case: Case) -> Case:
     assurance = None
     if verdict == "SAFE":
         tiers = {r.trust["tier"] for r in reports}
-        verified = any(s.id in {"VERIFIED_SERVICE", "GENUINE_ALERT_PATTERN"} for s in case.signals) or (tiers and tiers <= {"OFFICIAL", "POPULAR"})
+        verified = any(s.id in {"VERIFIED_SERVICE", "GENUINE_ALERT_PATTERN"} for s in case.signals) or bool(
+            tiers and tiers <= {"OFFICIAL", "POPULAR"} and not any(is_shortener(r.host) or r.trust.get("platform") for r in reports)
+        )
         if any(s.id == "UPI_VALID" for s in case.signals):
             assurance = "valid_payment"
         elif verified:
             assurance = "verified"
         else:
             assurance = "no_problems_found" if reports else "no_links"
+        if case.msg and case.msg.message_type == "promotion" and not any(s.polarity == "risk" and s.id not in SOFT_IDS and s.target is None for s in case.signals):
+            assurance = "promotion" if (verified or not reports) else "promotion_unverified"
 
     dangerous_ids = ids | {s.id for r in reports for s in r._signals if s.polarity == "risk"}
     case.result = {
@@ -221,6 +269,8 @@ def step_decide(case: Case) -> Case:
         "recommendation": "",
         "reasoning_model": "",
         "analysis_note": "",
+        "message_type": case.msg.message_type if case.msg else None,
+        "informational_wording": informational,
     }
     case.result.update(case.extra)
     return case

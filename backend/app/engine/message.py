@@ -54,7 +54,10 @@ PATTERNS: dict[str, list[str]] = {
     "CREDENTIAL_REQUEST": [
         r"\b(?:share|send|enter|provide|confirm|give|tell|submit|reply(?: with)?|forward|update|verify|type|dictate|read out)\b"
         r"(?:\W+\w+){0,4}?\W+(?:otp|one[- ]time[- ]password|pin|upi pin|mpin|cvv|password|passcode|card number|"
-        r"card details|aadhaa?r(?: number)?|pan(?: number| card)?|account number|net ?banking|verification code|login details|atm pin|expiry)\b",
+        r"card details|net ?banking|verification code|login details|atm pin|expiry)\b",
+        # identifiers (Aadhaar / PAN / account number): handing them over is the risk, "updating" them is just KYC wording
+        r"\b(?:share|send|enter|provide|give|tell|submit|reply(?: with)?|forward|type|dictate|read out)\b"
+        r"(?:\W+\w+){0,4}?\W+(?:aadhaa?r(?: number)?|pan(?: number| card)?|account number)\b",
         r"\b(?:otp|cvv|pin|password)\b\W+(?:is )?(?:required|needed|mandatory)\b",
         r"\bkindly (?:share|send|provide) .{0,20}(?:otp|pin|password|cvv)\b",
     ],
@@ -83,7 +86,7 @@ PATTERNS: dict[str, list[str]] = {
         r"\banydesk\b", r"\bteam ?viewer\b", r"\bquick ?support\b", r"\brustdesk\b", r"\bairdroid\b", r"\bultraviewer\b",
     ],
     "APK_INSTALL": [
-        r"\b\w+\.apk\b", r"\b(?:download|install) (?:the |our )?(?:\w+ )?(?:app|apk)\b", r"\bupdate (?:the )?app from (?:this )?link\b",
+        r"\b\w+\.apk\b", r"\b(?:download|install) (?:the |our )?(?:\w+ )?(?:app|apk)\b(?![\s\S]{0,45}\b(?:play ?store|app ?store|google play|apple)\b)", r"\bupdate (?:the )?app from (?:this )?link\b",
     ],
     "INVESTMENT_SCAM": [
         r"\bguaranteed (?:returns?|profit)\b", r"\bdouble your (?:money|investment)\b", r"\b\d{2,3}%\s*(?:returns?|profit)\b",
@@ -177,6 +180,8 @@ PROMPT_INJECTION = re.compile(
     re.I,
 )
 
+OPEN_FILE_CONTEXT = re.compile(r"\W*(?:to|and)\s+(?:open|unlock|decrypt|view)\s+(?:it|this|that|the|your)\b", re.I)
+
 GENUINE_ALERT = [
     r"\b(?:debited|credited)\b.{0,30}\b(?:rs\.?|inr|₹)\s?\d",
     r"\b(?:rs\.?|inr|₹)\s?\d[\d,.]*\s*(?:has been )?(?:debited|credited|spent|withdrawn)\b",
@@ -184,10 +189,26 @@ GENUINE_ALERT = [
     r"\byour (?:otp|one[- ]time[- ]password) (?:is|for)\b.{0,40}\d{4,8}",
     r"\b(?:do not|don'?t|never) share (?:this |the |your )?(?:otp|pin|cvv|password)\b",
     r"\btxn\b|\btransaction (?:id|ref)\b|\bupi ref(?:erence)?\b|\brrn\b",
+    r"\b\d{4,8}\b\W+(?:is|as)\W+(?:your|the)\W+(?:\w+\W+){0,2}(?:otp|code|passcode)\b",
+    r"\b(?:otp|code|passcode)\b[^.\n]{0,40}\bis\W+\d{4,8}\b",
+    r"\b(?:do not|don'?t|never) share\b",
+]
+
+# Ads and offers: harmless to read, but where their link leads is unknown. Needs two different cues.
+PROMO_CUES = [
+    r"\b\d{1,3}\s?% ?(?:off|discount|cashback)\b", r"\bflat (?:rs\.?|inr|₹)?\s?\d", r"\bup ?to (?:rs\.?|inr|₹)?\s?[\d,]+ ?(?:off|lakh|cashback)",
+    r"\b(?:sale|offers?|discount|deals?|coupon|voucher|dhamaka|clearance|exchange bonus|lifetime[- ]free|pre-?approved|membership)\b",
+    r"\bt&?cs? apply\b|\bterms (?:and|&) conditions apply\b",
+    r"\b(?:shop|order|book|apply|upgrade|renew|sign ?up|join|claim|download|visit)\b\W+(?:\w+\W+){0,2}(?:now|today|instantly|online|in-?store|your nearest store)\b",
+    r"\bunsubscribe\b|\breply stop\b|\blimited (?:period|time)\b|\boffer (?:valid|ends)\b|\bnew launch\b|\bfree (?:trial|delivery|class|demo|membership)\b",
+    r"\b(?:invit\w*|referral|refer)\b.{0,40}\b(?:code|friend|earn|get)\b", r"\bcash ?back\b|\bcoupons?\b|\breward points?\b|\bdownload (?:the )?\w+ app\b",
+    r"\bsave (?:up ?to )?(?:rs\.?|inr|₹)?\s?\d", r"\bwaived\b|\bearly access\b|\bfirst (?:class|order|month|ride) free\b|\bmaking charges\b",
+    r"(?:rs\.?|inr|₹)\s?[\d,]+\s*(?:/|per )\s*(?:month|mo|year|yr|day)\b", r"\b(?:diwali|festive|festival|navratri|holi|christmas|black friday|big billion|great indian)\b",
+    r"\b(?:bhk|rera|site visit|booking open|plan|plans|recharge now|upgrade)\b", r"\b(?:new|latest) (?:range|collection|offer|plan|launch)\b",
 ]
 
 PHONE_RE = re.compile(r"(?<!\d)(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}(?!\d)")
-TOLLFREE_RE = re.compile(r"(?<!\d)1800[\s-]?\d{3}[\s-]?\d{3,4}(?!\d)")
+TOLLFREE_RE = re.compile(r"(?<!\d)(?:1-?800|1860)[\s-]?\d{3,4}(?:[\s-]?\d{3,4})?(?!\d)")
 EMAIL_RE = re.compile(r"[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}", re.I)
 UPI_RE = re.compile(r"(?<![\w.])([a-z0-9._-]{2,}@(" + "|".join(sorted(UPI_HANDLES, key=len, reverse=True)) + r"))(?![\w.])", re.I)
 IFSC_RE = re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b")
@@ -199,6 +220,7 @@ class MessageAnalysis:
     entities: dict = field(default_factory=dict)
     mentioned_brands: list = field(default_factory=list)  # Brand objects
     genuine_alert: bool = False
+    message_type: str | None = None  # otp | transaction | promotion | None
 
 
 def extract_entities(text: str) -> dict:
@@ -245,6 +267,10 @@ def analyze(text: str, claimed: str | None = None, source: str = "web") -> Messa
                     before = low[max(0, m.start() - 70) : m.start()]
                     if NEGATION.search(before + low[m.start() : m.start() + 1]) or NEGATION.search(before):
                         continue
+                    if re.search(r"wi-?\s?fi", m.group(0)):
+                        continue  # a Wi-Fi password is not an account secret
+                    if OPEN_FILE_CONTEXT.match(low[m.end() : m.end() + 40]):
+                        continue  # "enter your password to open it": protects an attachment, not an account
                 phrase = re.sub(r"\s+", " ", m.group(0))[:60]
                 label = sid.replace("_", " ").lower()
                 add(sid, f"Message wording ({label}): \"{phrase}\".")
@@ -263,6 +289,13 @@ def analyze(text: str, claimed: str | None = None, source: str = "web") -> Messa
         add("SENDER_PERSONAL_NUMBER", "Claims to come from a bank but was sent from an ordinary phone number.")
 
     result.mentioned_brands = mentioned_brands(text)
+
+    if re.search(r"\b(?:otp|verification code|security code|passcode)\b", low) and result.genuine_alert:
+        result.message_type = "otp"
+    elif result.genuine_alert:
+        result.message_type = "transaction"
+    elif len({i for i, p in enumerate(PROMO_CUES) if re.search(p, low)}) >= 2:
+        result.message_type = "promotion"
 
     if result.genuine_alert and not any(s.id in {"CREDENTIAL_REQUEST", "FEAR_OR_THREAT", "ARREST_THREAT", "UPI_COLLECT_SCAM", "PRIZE_LOTTERY"} for s in result.signals):
         result.signals.append(make("GENUINE_ALERT_PATTERN", "The wording matches a standard bank / OTP alert template.", "message", None))

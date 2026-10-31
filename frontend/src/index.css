@@ -15,6 +15,7 @@
   --color-warn: #ffb020;
   --color-danger: #ff4d5e;
   --color-unknown: #8a94a6;
+  --color-promo: #6aa8ff;
 
   --font-display: "Anton", "Impact", "Arial Narrow", sans-serif;
   --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
@@ -31,6 +32,7 @@
 :root[data-verdict="SUSPICIOUS"] { --tint: 255, 176, 32; }
 :root[data-verdict="DANGEROUS"] { --tint: 255, 77, 94; }
 :root[data-verdict="COULD_NOT_VERIFY"] { --tint: 138, 148, 166; }
+:root[data-verdict="PROMO"] { --tint: 106, 168, 255; }
 
 html, body, #root { min-height: 100%; }
 body {

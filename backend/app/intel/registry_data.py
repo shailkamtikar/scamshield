@@ -9,7 +9,7 @@ registrable-domain match only).
 REGISTRY: dict[str, list[tuple[str, list[str]]]] = {
     "banks_india": [
         ("SBI", ["sbi.co.in", "onlinesbi.sbi", "sbi.bank.in", "sbicard.com", "sbilife.co.in", "sbimf.com", "yonosbi.com"]),
-        ("HDFC Bank", ["hdfcbank.com", "hdfc.com", "hdfcbankoffers.com", "hdfclife.com", "hdfcergo.com", "hdfcfund.com", "hdfcsec.com"]),
+        ("HDFC Bank", ["hdfcbank.com", "hdfcbk.io", "hdfc.com", "hdfcbankoffers.com", "hdfclife.com", "hdfcergo.com", "hdfcfund.com", "hdfcsec.com"]),
         ("ICICI Bank", ["icicibank.com", "icicidirect.com", "iciciprulife.com", "icicilombard.com", "icicipruamc.com"]),
         ("Axis Bank", ["axisbank.com", "axismf.com", "axismaxlife.com"]),
         ("Kotak Mahindra Bank", ["kotak.com", "kotaksecurities.com", "kotakmf.com", "kotaklife.com"]),

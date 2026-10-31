@@ -56,7 +56,9 @@ export default function App() {
     return () => { live = false; clearInterval(id); };
   }, []);
 
-  const verdict = inv.phase === "result" ? inv.meta?.result.verdict : inv.phase === "scanning" ? inv.preview?.verdict : undefined;
+  const finished = inv.phase === "result" ? inv.meta?.result : undefined;
+  const isPromo = finished?.verdict === "SAFE" && String(finished.assurance || "").startsWith("promotion");
+  const verdict = isPromo ? "PROMO" : inv.phase === "result" ? finished?.verdict : inv.phase === "scanning" ? inv.preview?.verdict : undefined;
   useEffect(() => {
     if (verdict) document.documentElement.dataset.verdict = verdict;
     else delete document.documentElement.dataset.verdict;

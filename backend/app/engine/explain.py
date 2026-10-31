@@ -24,6 +24,11 @@ RECOMMENDATIONS = {
 # Official domains, but anyone can create a link on them, so the domain says nothing about who sent it.
 OPEN_LINK_SERVICES = {"t.me", "telegram.me", "wa.me", "discord.gg", "forms.gle", "ig.me", "fb.me", "lnkd.in", "youtu.be"}
 
+PROMO_ADVICE = {
+    "promotion": "This reads like an advertisement and the link goes to the organisation's own site. Reading it is harmless; offers can still end, so check the details in the official app or website.",
+    "promotion_unverified": "This reads like an advertisement. Reading it is harmless, but we could not confirm where its link leads. Don't tap it; open the organisation's official app or website yourself instead.",
+}
+
 PAYMENT_ADVICE = "Check that the name shown is who you mean to pay before you confirm. Remember that you never need to scan a QR or enter your PIN to receive money."
 
 
@@ -60,7 +65,7 @@ def explain(case: Case, use_llm: bool = True) -> Case:
     result = case.result
     verdict = result["verdict"]
     result["reasons"] = template_reasons(case)
-    fixed_advice = PAYMENT_ADVICE if result.get("assurance") == "valid_payment" else None
+    fixed_advice = PAYMENT_ADVICE if result.get("assurance") == "valid_payment" else PROMO_ADVICE.get(result.get("assurance") or "")
     result["recommendation"] = fixed_advice or RECOMMENDATIONS[verdict]
     result["reasoning_model"] = ""
 
@@ -96,6 +101,9 @@ def explain(case: Case, use_llm: bool = True) -> Case:
     concrete = analysis.asks_for in {"secret_code_or_password", "money", "personal_details", "install_app"} or (
         analysis.asks_for in {"click_link", "call_number"} and unknown_links
     )
+    if result.get("assurance") in PROMO_ADVICE:
+        # an ad always says "apply", "pay" or "click"; only a request for a secret or an install is a scam signal
+        concrete = analysis.asks_for in {"secret_code_or_password", "install_app"}
     names_own_official_address = _mentions_own_official_address(case)
     all_verified = bool(result["urls"]) and all(u["trust"]["tier"] == "OFFICIAL" and u["registrable"] not in OPEN_LINK_SERVICES for u in result["urls"])
     genuine = any(s.id == "GENUINE_ALERT_PATTERN" for s in case.signals)
