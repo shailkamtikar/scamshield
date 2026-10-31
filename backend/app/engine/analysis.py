@@ -34,6 +34,20 @@ SOFT_IDS = {"URGENCY", "FEAR_OR_THREAT", "KYC_UPDATE", "FINANCIAL_PRESSURE", "SU
 TOLL_FREE = ("1800", "1860")
 
 
+LINK_VOUCHED_IDS = SOFT_IDS | {"PRIZE_LOTTERY", "JOB_TASK_SCAM", "INVESTMENT_SCAM"}
+
+
+def _all_links_verified(case: "Case") -> bool:
+    """At least one link, and every link is an official / well-known / established same-name address (no shorteners, no open platforms)."""
+    if not case.url_reports:
+        return False
+    return all(
+        r.verdict == "SAFE" and not r.trust.get("platform") and not is_shortener(r.host) and r.registrable not in OPEN_LINK_SERVICES
+        and (r.trust["tier"] in {"OFFICIAL", "POPULAR"} or _established_match(case, r))
+        for r in case.url_reports
+    )
+
+
 def _established_match(case: "Case", r: UrlReport) -> bool:
     """
     A domain our lists don't know, but which is the named organisation's own name, over five years old, clean in every
@@ -208,6 +222,13 @@ def step_decide(case: Case) -> Case:
     if "CREDENTIAL_REQUEST" in ids and _entry_instruction_only(case, msg_signals):
         informational += [s.label for s in msg_signals if s.id == "CREDENTIAL_REQUEST"]
         msg_signals = [s for s in msg_signals if s.id != "CREDENTIAL_REQUEST"]
+        ids = {s.id for s in msg_signals if s.polarity == "risk"}
+    # The link decides. When every link is a verified address and nothing else in the message can take you anywhere
+    # unverified, persuasive wording (urgency, KYC, offers, "guaranteed returns", prizes) cannot lead to a scam: the click
+    # lands on the real organisation. Only requests to hand something over (a code to a person, money, an install) still count.
+    if ids & LINK_VOUCHED_IDS and _all_links_verified(case) and not _has_unverified_channel(case):
+        informational += [s.label for s in msg_signals if s.id in LINK_VOUCHED_IDS]
+        msg_signals = [s for s in msg_signals if s.id not in LINK_VOUCHED_IDS]
         ids = {s.id for s in msg_signals if s.polarity == "risk"}
     if ids and ids <= SOFT_IDS and not _has_unverified_channel(case) and (ids == {"FINANCIAL_PRESSURE"} or _has_self_service_route(case) or case.msg.message_type in {"otp", "transaction"}):
         informational = [s.label for s in msg_signals if s.polarity == "risk"]

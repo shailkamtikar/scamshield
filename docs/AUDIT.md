@@ -111,6 +111,8 @@ A real ICICI mail explaining how to log in with a mobile number and OTP was mark
 
 New test set `genuine_longform.csv` (25 how-to / notice mails: payments, ATM and card activation, UPI mandate approval, e-verify, UAN, SIM re-verification, returns, renewals): 5 were flagged on first run, 0 now offline (24 offline, the 25th needs the live checks). Guard tests confirm the same wording **with a hand-over channel** (read out to an executive, reply with the OTP, unknown link, mobile number, Hinglish "OTP bhejein") is still flagged. Total tests: 313 backend, 9 frontend.
 
+**The link decides (31 Oct).** When every link in a message is a verified address (official, well-known, or an established same-name domain; no shorteners or open platforms) and nothing else in it can take you somewhere unverified, persuasive wording (urgency, KYC, prizes, "guaranteed returns", work-from-home) is no longer scored. Still flagged even with a verified link: handing a code to a person, paying a fee, installing a remote-access or APK app. The urlscan.io real-browser sandbox was re-tested live with the configured key: scan finished in 18 s with final address, page title, domain age and screenshot.
+
 ## How to re-run everything
 
 ```bash

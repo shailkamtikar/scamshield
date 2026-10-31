@@ -142,3 +142,23 @@ def test_instruction_wording_with_a_hand_over_channel_is_still_flagged(text):
 def test_threats_with_only_moderate_hints_never_reach_dangerous():
     r = run("Dear Consumer, your connection will be disconnected tonight, pending bill. Pay at https://www.somecity-power.example/pay")
     assert r["verdict"] != "DANGEROUS"
+
+
+# ---- the link decides: persuasive wording around a verified address cannot lead to a scam
+@pytest.mark.parametrize(
+    "text",
+    [
+        "URGENT: your KYC will expire today! Account will be blocked. Update now at https://www.hdfcbank.com/personal/kyc?ref=SMS&utm_source=sms&utm_medium=alert&cid=88123771-aa91-4f2e-b0d1-5c1f2a9c9a10&tok=Zm9vYmFy",
+        "Congratulations! You have won a Rs 500 voucher. Claim now before it expires: https://www.amazon.in/gp/rewards?ref=sms",
+        "Guaranteed returns of 7.25% on the SBI Wecare FD, limited period offer, invest today at https://sbi.co.in/web/personal-banking/investment-deposits",
+        "Work from home opportunities, earn Rs 30,000 per month, apply now: https://www.naukri.com/work-from-home-jobs",
+    ],
+)
+def test_verified_link_means_persuasive_wording_is_not_flagged(text):
+    assert run(text)["verdict"] == "SAFE"
+
+
+def test_verified_link_does_not_excuse_handing_over_a_secret_or_money():
+    assert run("Visit https://www.sbi.co.in and then read out your OTP to our executive.")["verdict"] != "SAFE"
+    assert run("Your refund is ready at https://www.amazon.in. Pay a Rs 3,500 processing fee first via UPI to release the amount.")["verdict"] != "SAFE"
+    assert run("See https://www.hdfcbank.com. Install AnyDesk now and share the code to fix your account.")["verdict"] != "SAFE"
