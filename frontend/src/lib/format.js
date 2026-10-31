@@ -10,8 +10,8 @@ export function shortUrl(url = "", max = 56) {
 
 export function ageLabel(days) {
   if (days == null) return null;
-  if (days < 1) return "registered today";
+  if (days < 1) return "Registered today";
   if (days < 60) return `${days} days old`;
   if (days < 730) return `${Math.round(days / 30)} months old`;
-  return `${Math.floor(days / 365)} years old`;
+  return `About ${Math.floor(days / 365)} years old`;
 }

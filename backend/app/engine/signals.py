@@ -14,7 +14,7 @@ CATALOG: dict[str, tuple[str, int, str, str]] = {
     "FEED_HIT": ("risk", 100, "decisive", "Listed as malicious by a threat feed"),
     "VT_MALICIOUS_MANY": ("risk", 80, "decisive", "Flagged malicious by many antivirus engines"),
     "ML_DOMAIN_RISK": ("risk", 22, "moderate", "Learned model: this domain name resembles known phishing domains"),
-    "VT_MALICIOUS_FEW": ("risk", 25, "moderate", "Flagged by a few antivirus engines"),
+    "VT_MALICIOUS_FEW": ("risk", 12, "weak", "Flagged by one or two security engines"),
     # --- brand / lookalike ---
     "BRAND_LOOKALIKE": ("risk", 60, "strong", "Misspelled lookalike of a known brand"),
     "BRAND_COMBOSQUAT": ("risk", 55, "strong", "Brand name combined with account/security words"),
@@ -37,7 +37,7 @@ CATALOG: dict[str, tuple[str, int, str, str]] = {
     "SHORTENER": ("risk", 8, "weak", "Shortened link hides the real destination"),
     "NO_HTTPS": ("risk", 8, "weak", "Link does not use HTTPS"),
     "USER_CONTENT_HOST": ("risk", 14, "weak", "Hosted on a free page-hosting platform"),
-    "REDIRECT_TO_OTHER_DOMAIN": ("risk", 8, "weak", "Redirects to a different domain"),
+    "REDIRECT_TO_OTHER_DOMAIN": ("risk", 4, "weak", "Redirects to a different domain"),
     "REDIRECT_CHAIN_LONG": ("risk", 10, "weak", "Long chain of redirects"),
     # --- domain facts ---
     "DOMAIN_AGE_LT_30D": ("risk", 35, "strong", "Domain registered less than 30 days ago"),

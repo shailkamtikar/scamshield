@@ -65,7 +65,7 @@ async def investigate_qr_stream(file: UploadFile = File(...), claimed_organizati
         return case
 
     return StreamingResponse(
-        stream_case(prepare, ("decode", "Decoding the QR code")),
+        stream_case(prepare, ("decode", "Reading the QR code")),
         media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 

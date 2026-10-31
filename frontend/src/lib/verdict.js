@@ -1,38 +1,60 @@
-export const VERDICTS = {
-  SAFE: {
-    word: "Safe",
-    color: "var(--color-safe)",
-    headline: "No threats found.",
-    blurb: "Every check came back clean for what you submitted.",
-    icon: "check",
+/** Plain-language wording. `assurance` separates "we know this site" from "we found nothing". */
+const VERDICTS = {
+  SAFE_VERIFIED: {
+    title: "This looks safe",
+    blurb: "We recognise this as genuine, and nothing we checked raised a concern.",
+    badge: "Looks safe",
+  },
+  SAFE_UNKNOWN: {
+    title: "We found no problems",
+    blurb: "Nothing we checked raised a concern, but we don't know this site well, so stay a little careful.",
+    badge: "No problems found",
   },
   SUSPICIOUS: {
-    word: "Suspicious",
-    color: "var(--color-warn)",
-    headline: "Don't trust this yet.",
-    blurb: "Some warning signs showed up. Verify through an official channel before acting.",
-    icon: "alert",
+    title: "Be careful with this",
+    blurb: "Some warning signs showed up. Check with the organisation directly before you do anything.",
+    badge: "Be careful",
   },
   DANGEROUS: {
-    word: "Dangerous",
-    color: "var(--color-danger)",
-    headline: "Do not open or reply.",
-    blurb: "Strong evidence of a scam or phishing attempt.",
-    icon: "x",
+    title: "This looks like a scam",
+    blurb: "We found strong signs of a scam or phishing attempt. Please don't open the link or reply.",
+    badge: "Likely scam",
   },
   COULD_NOT_VERIFY: {
-    word: "Unverified",
-    color: "var(--color-unknown)",
-    headline: "We couldn't verify this.",
-    blurb: "The link doesn't exist or can't be reached, so there was nothing to inspect.",
-    icon: "help",
+    title: "We couldn't check this link",
+    blurb: "The link doesn't exist or didn't respond, so there was nothing for us to inspect.",
+    badge: "Couldn't check",
   },
 };
 
-export const getVerdict = (v) => VERDICTS[v] || VERDICTS.COULD_NOT_VERIFY;
+export function getVerdict(verdict, assurance) {
+  if (verdict === "SAFE") return assurance === "verified" ? VERDICTS.SAFE_VERIFIED : VERDICTS.SAFE_UNKNOWN;
+  return VERDICTS[verdict] || VERDICTS.COULD_NOT_VERIFY;
+}
+
+export function confidenceWord(c) {
+  if (c >= 0.9) return "Very sure";
+  if (c >= 0.75) return "Fairly sure";
+  if (c >= 0.55) return "Somewhat sure";
+  return "Not very sure";
+}
 
 export const TRUST_LABEL = {
-  OFFICIAL: "Verified official",
-  POPULAR: "Well-known site",
-  UNKNOWN: "Not on any trusted list",
+  OFFICIAL: "Verified official site",
+  POPULAR: "Well-known website",
+  UNKNOWN: "Not a site we recognise",
+};
+
+export const REACH_LABEL = {
+  OK: "Opens normally",
+  NXDOMAIN: "This address doesn't exist",
+  NOT_FOUND: "Page not found",
+  TIMEOUT: "Didn't respond in time",
+  CONNECT_FAILED: "Couldn't connect",
+  TLS_ERROR: "Security certificate problem",
+  SERVER_ERROR: "The site has a server error",
+  LOOP: "Redirects in circles",
+  TOO_MANY_HOPS: "Too many redirects",
+  BLOCKED: "Blocked for safety",
+  ERROR: "Couldn't check",
 };

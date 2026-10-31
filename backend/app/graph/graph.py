@@ -41,11 +41,11 @@ builder.add_edge("explain", END)
 graph = builder.compile()
 
 STAGE_LABELS = {
-    "extract": "Finding links and details in the content",
-    "message": "Reading the wording for scam tactics",
-    "urls": "Checking every link: structure, reputation, redirects, domain age",
-    "decide": "Combining the evidence into a verdict",
-    "explain": "Writing the explanation",
+    "extract": "Finding the links and details",
+    "message": "Reading the wording for scam tricks",
+    "urls": "Checking each link and page",
+    "decide": "Weighing up the evidence",
+    "explain": "Writing your report",
 }
 
 

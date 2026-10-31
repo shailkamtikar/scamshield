@@ -17,6 +17,13 @@ from app.intel.trust import GENERIC_BRAND_WORDS, TrustInfo, brand_tokens
 from app.intel.urls import ParsedUrl
 
 DATA = Path(__file__).parent / "data"
+# Words that really point at accounts and credentials. Ordinary business words
+# such as "services", "online" or "web" are not evidence on their own.
+STRONG_ADMIN_WORDS = {
+    "login", "signin", "verify", "verification", "secure", "security", "account", "password", "auth", "authentication",
+    "kyc", "billing", "refund", "suspended", "blocked", "confirm", "validate", "recovery", "netbanking", "otp", "unlock",
+    "reactivate", "activation",
+}
 _LEET = {"0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"}
 
 
@@ -65,7 +72,7 @@ def _words(text: str) -> list[str]:
 
 def _deleet_variants(word: str) -> set[str]:
     base = "".join(_LEET.get(c, c) for c in word)
-    variants = {base, base.replace("rn", "m"), base.replace("vv", "w")}
+    variants = {base, base.replace("rn", "m"), base.replace("vv", "w"), base.replace("i", "l"), base.replace("l", "i")}
     if "1" in word:
         variants.add("".join("i" if c == "1" else _LEET.get(c, c) for c in word))
     return variants
@@ -73,6 +80,9 @@ def _deleet_variants(word: str) -> set[str]:
 
 def _match_brand(word: str, tokens: dict, allow_substring: bool = True):
     """Return (brand, kind) where kind is 'exact', 'embedded' or 'lookalike'."""
+
+    if word in ADMIN_WORDS:
+        return None, None
 
     if word in tokens:
         return tokens[word], "exact"
@@ -86,12 +96,12 @@ def _match_brand(word: str, tokens: dict, allow_substring: bool = True):
                     return brand, "embedded"
 
     for variant in _deleet_variants(word):
-        if variant != word and variant in tokens and len(variant) >= 4:
+        if variant != word and variant in tokens and len(variant) >= 5:
             return tokens[variant], "lookalike"
 
     if len(word) >= 6:
         for token, brand in tokens.items():
-            if len(token) >= 6 and len(word) >= 6 and abs(len(token) - len(word)) <= 2 and word != token and token not in GENERIC_BRAND_WORDS:
+            if len(token) >= 6 and len(word) >= 6 and abs(len(token) - len(word)) <= 2 and word != token and token not in GENERIC_BRAND_WORDS and word not in token and token not in word:
                 if ratio(word, token) >= 85:
                     return brand, "lookalike"
     return None, None
@@ -193,7 +203,8 @@ def analyze(parsed: ParsedUrl, trust: TrustInfo, extra_brands: tuple[str, ...] =
             # e.g. "paytm.xyz": brand label on a foreign suffix
             add("BRAND_IN_DOMAIN", f"'{parsed.registrable}' uses the {brand.name} name but is not a {brand.name} domain.")
     else:
-        if admin_in_label and (len(label_words) >= 2 or "-" in parsed.domain_label):
+        strong_admin = [w for w in admin_in_label if w in STRONG_ADMIN_WORDS]
+        if strong_admin and (len(admin_in_label) >= 2 or len(label_words) >= 2) or len(admin_in_label) >= 3:
             add("ADMIN_COMPOUND", f"'{parsed.domain_label}' is built from account/security words ({', '.join(admin_in_label[:3])}).")
 
     # brand name hiding in subdomain / path of someone else's domain

@@ -93,4 +93,6 @@ def repair_url_text(text: str) -> str:
         text,
         flags=re.I,
     )
-    return re.sub(r"(?i)\b(https?://)\s+", r"\1", out)
+    out = re.sub(r"(?i)\b(https?://)\s+", r"\1", out)
+    # A link wrapped onto the next line: join it back together.
+    return re.sub(r"(?i)(https?://\S*[-./_=?&])[ \t]*\r?\n[ \t]*(\S)", r"\1\2", out)

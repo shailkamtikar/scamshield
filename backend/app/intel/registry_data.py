@@ -233,6 +233,7 @@ REGISTRY: dict[str, list[tuple[str, list[str]]]] = {
         ("UPS", ["ups.com"]),
         ("Aramex", ["aramex.com"]),
         ("Gati", ["gati.com"]),
+        ("DPD", ["dpd.com", "dpd.co.uk"]),
         ("Ekart", ["ekartlogistics.com"]),
     ],
     "jobs_education": [

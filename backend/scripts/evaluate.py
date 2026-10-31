@@ -33,6 +33,8 @@ def main():
     ap.add_argument("--split", default="all")
     ap.add_argument("--show-errors", type=int, default=0)
     ap.add_argument("--no-gate", action="store_true")
+    ap.add_argument("--blind", action="store_true", help="switch off every threat feed: how would brand-new phishing fare?")
+    ap.add_argument("--only", default="", help="only this label: phish or safe")
     ap.add_argument("--full", action="store_true", help="real product path: feeds + text-only page fetch + page inspection")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--include-malware", action="store_true", help="count malware-download links (not phishing) in the gate")
@@ -48,6 +50,8 @@ def main():
         from app.intel import reputation
 
         reputation.load_all_lists()
+        if args.blind:
+            reputation.check_all = lambda *a, **k: []
 
     rows = list(csv.DictReader(open(ROOT / "data" / "benchmark" / "urls.csv", encoding="utf-8")))
     if not args.include_malware:
@@ -56,6 +60,8 @@ def main():
     if args.split != "all":
         rows = [r for r in rows if r["split"] == args.split]
 
+    if args.only:
+        rows = [r for r in rows if r["label"] == args.only]
     if args.limit:
         import random
         random.Random(1).shuffle(rows)
@@ -67,13 +73,15 @@ def main():
     def judge(r):
         parsed = parse_url(r["url"])
         if parsed is None:
-            return "UNPARSEABLE"
-        return analyze_url(parsed, network=args.live, inspect_page=args.full).verdict
+            return "UNPARSEABLE", 0.0, []
+        rep = analyze_url(parsed, network=args.live, inspect_page=args.full)
+        return rep.verdict, rep.confidence, [s["id"] for s in rep.signals if s["polarity"] == "risk"]
 
     with ThreadPoolExecutor(max_workers=8 if args.live else 1) as pool:
         verdicts = list(pool.map(judge, rows))
 
-    for r, verdict in zip(rows, verdicts):
+    buckets = defaultdict(lambda: [0, 0])
+    for r, (verdict, conf, ids) in zip(rows, verdicts):
         bad = r["label"] == "phish"
         per_cat[r["category"]]["n"] += 1
         if verdict == "COULD_NOT_VERIFY":  # dead link: nothing to inspect, not counted either way
@@ -82,15 +90,18 @@ def main():
             per_cat[r["category"]]["dead"] += 1
             continue
         flagged = verdict in FLAGGED or (verdict == "UNPARSEABLE" and bad)
+        b = min(int(conf * 10), 9) / 10
+        buckets[b][0] += flagged == bad
+        buckets[b][1] += 1
         if bad and flagged:
             tp += 1
             per_cat[r["category"]]["ok"] += 1
         elif bad:
             fn += 1
-            errors.append(("MISSED", r["category"], r["url"], verdict))
+            errors.append(("MISSED", r["category"], r["url"], f"{verdict} {ids}"))
         elif flagged:
             fp += 1
-            errors.append(("FALSE ALARM", r["category"], r["url"], verdict))
+            errors.append(("FALSE ALARM", r["category"], r["url"], f"{verdict} {ids}"))
         else:
             tn += 1
             per_cat[r["category"]]["ok"] += 1
@@ -108,10 +119,14 @@ def main():
     print("\nper category (correct/total):")
     for cat, c in sorted(per_cat.items()):
         print(f"  {cat:26} {c['ok']:4}/{c['n']:<4} {c['ok'] / max(c['n'], 1):.0%}   dead {c['dead']}")
+    print()
+    print("confidence reliability (stated confidence -> how often the engine was actually right):")
+    for b, (right, n) in sorted(buckets.items()):
+        print(f"  {b:.1f}-{b + 0.1:.1f}: right {right}/{n} = {right / n:.0%}")
     if args.show_errors:
         print("\nerrors:")
         for kind, cat, url, verdict in errors[: args.show_errors]:
-            print(f"  [{kind}] {cat}: {url[:100]} -> {verdict}")
+            print(f"  [{kind}] {cat}: {url[:70]} -> {verdict}")
 
     ok = detection >= GATES["detection"] and fpr <= GATES["false_positive"] and accuracy >= GATES["accuracy"]
     print("\nGATES:", "PASS" if ok else "FAIL", GATES)

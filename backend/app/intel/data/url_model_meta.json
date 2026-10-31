@@ -1,21 +1,21 @@
 {
- "threshold_strict": 2.426,
+ "threshold_strict": 2.917,
  "operating_points": {
   "0.005": {
-   "threshold": 2.923,
-   "recall_on_openphish": 0.108
+   "threshold": 2.917,
+   "recall_on_openphish": 0.336
   },
   "0.01": {
-   "threshold": 2.426,
-   "recall_on_openphish": 0.169
+   "threshold": 2.407,
+   "recall_on_openphish": 0.446
   },
   "0.02": {
-   "threshold": 1.934,
-   "recall_on_openphish": 0.265
+   "threshold": 1.923,
+   "recall_on_openphish": 0.525
   },
   "0.05": {
-   "threshold": 1.259,
-   "recall_on_openphish": 0.361
+   "threshold": 1.251,
+   "recall_on_openphish": 0.636
   }
  },
  "trained_on": 216000

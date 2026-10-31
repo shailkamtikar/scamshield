@@ -64,6 +64,11 @@ def assess_url(
         score = None if verdict == "COULD_NOT_VERIFY" else clamp_to_band(verdict, raw)
         return Assessment(verdict, score, rule, risk, trust, sigs)
 
+    # Several tiny oddities are not evidence of a scam: without at least one
+    # moderate signal, a link needs a clearly higher total to be flagged.
+    substantial = any(s.polarity == "risk" and s.strength != "weak" for s in sigs)
+    flag_at = 20 if substantial else 30
+
     if ids & DECISIVE_IDS:
         return result("DANGEROUS", "R1_THREAT_INTEL_OR_DECISIVE", max(risk, 92))
 
@@ -81,13 +86,13 @@ def assess_url(
         return result("SAFE", "R4_OFFICIAL_DOMAIN", min(risk, 10))
 
     if trust_tier == "POPULAR":
-        if risk < 20:
+        if risk < flag_at:
             return result("SAFE", "R5_POPULAR_CLEAN", min(risk, 15))
         return result("SUSPICIOUS", "R5_POPULAR_WITH_RISK", risk)
 
     if platform:
         return result("SUSPICIOUS", "R6_UNVERIFIED_HOSTING", max(risk, 25))
-    if risk >= 20:
+    if risk >= flag_at:
         return result("SUSPICIOUS", "R6_UNKNOWN_WITH_RISK", risk)
     return result("SAFE", "R7_UNKNOWN_NO_RISK", min(risk, 18))
 

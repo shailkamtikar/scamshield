@@ -71,6 +71,13 @@ def main():
         r = registrable(host)
         if r and r not in tranco_all and r not in official:
             openphish.add(r)
+    # The benchmark's phishing links must stay unseen too, so blind evaluation is fair.
+    for row in csv.DictReader(open(ROOT / "data" / "benchmark" / "urls.csv", encoding="utf-8")):
+        if row["label"] == "phish":
+            host = row["url"].split("//")[-1].split("/")[0].split(":")[0]
+            r = registrable(host)
+            if r and r not in tranco_all and r not in official:
+                openphish.add(r)
     phishdb -= openphish  # the external test must be unseen
 
     safe = [d for r, d in tranco if r > 50_000 and d not in official and d not in phishdb and d not in openphish]
@@ -105,7 +112,7 @@ def main():
 
     weights = clf.coef_[0].astype(np.float32)
     np.savez_compressed(OUT / "url_model.npz", weights=np.round(weights, 3), bias=np.float32(clf.intercept_[0]))
-    (OUT / "url_model_meta.json").write_text(json.dumps({"threshold_strict": report["0.01"]["threshold"], "operating_points": report, "trained_on": len(train_pos) + len(train_neg)}, indent=1), encoding="utf-8")
+    (OUT / "url_model_meta.json").write_text(json.dumps({"threshold_strict": report["0.005"]["threshold"], "operating_points": report, "trained_on": len(train_pos) + len(train_neg)}, indent=1), encoding="utf-8")
     print("saved", (OUT / "url_model.npz").stat().st_size // 1024, "KB")
 
 

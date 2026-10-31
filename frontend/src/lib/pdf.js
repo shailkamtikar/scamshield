@@ -14,7 +14,7 @@ const RULE = "#cbd5e1";
 /** Black-on-white, printable report built only from the real API response. */
 export function generateReportPdf(meta) {
   const { result, mode, ref, at, latencyMs, input } = meta;
-  const v = getVerdict(result.verdict);
+  const v = getVerdict(result.verdict, result.assurance);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const cur = { y: M };
 
@@ -67,9 +67,9 @@ export function generateReportPdf(meta) {
   cur.y += 8;
 
   heading("Verdict");
-  doc.setFont("helvetica", "bold").setFontSize(26).setTextColor(INK).text(v.word.toUpperCase(), M, cur.y + 8);
-  cur.y += 26;
-  para(`${v.headline} ${v.blurb}`, { color: MUTED });
+  doc.setFont("helvetica", "bold").setFontSize(22).setTextColor(INK).text(v.title, M, cur.y + 6);
+  cur.y += 24;
+  para(v.blurb, { color: MUTED });
   if (result.verdict !== "COULD_NOT_VERIFY") row("Risk score", `${result.risk_score} / 100`);
   row("Risk level", result.risk_level);
   row("Confidence", `${Math.round(result.confidence * 100)}%  (${Math.round((result.confidence_factors?.coverage ?? 0) * 100)}% of checks completed, ${Math.round((result.confidence_factors?.agreement ?? 0) * 100)}% of strong evidence agrees)`);
@@ -105,11 +105,13 @@ export function generateReportPdf(meta) {
     result.urls.forEach((u, i) => {
       need(60);
       para(`${i + 1}. ${defang(u.url)}`, { font: "bold", gap: 4 });
-      row("Verdict", `${getVerdict(u.verdict).word}${u.score != null ? ` (score ${u.score})` : ""}`);
+      row("Result", `${getVerdict(u.verdict, u.trust.tier === "UNKNOWN" ? "no_problems_found" : "verified").badge}${u.score != null ? ` (score ${u.score})` : ""}`);
       row("Trust", u.trust.brand ? `${u.trust.tier} - ${u.trust.brand}` : u.trust.tier);
       if (u.domain_age_days != null) row("Domain age", `${u.domain_age_days} days`);
       if (u.reachability) row("Reachability", `${u.reachability.outcome}${u.reachability.status ? ` (${u.reachability.status})` : ""}, ${Math.max(0, (u.reachability.chain?.length || 1) - 1)} redirect(s)`);
       if (u.reputation?.length) row("Threat feeds", u.reputation.map((p) => `${p.provider}: ${p.status}`).join("; "));
+      if (u.page_title) row("Page title", u.page_title);
+      if (u.sandbox) row("Sandbox", `${u.sandbox.source === "live_scan" ? "Live scan" : "Earlier scan"} by urlscan.io${u.sandbox.malicious === true ? ": judged malicious" : ""}`);
       if (u.destination) row("Final destination", defang(u.destination.url));
       cur.y += 6;
     });
@@ -120,7 +122,7 @@ export function generateReportPdf(meta) {
     result.score_breakdown.forEach((r) => row(r.signal, `${r.points > 0 ? "+" : ""}${r.points}`));
   }
 
-  heading("What to do next");
+  heading("What you should do");
   para(result.recommendation);
   if (result.verdict !== "SAFE") para("Report cyber fraud at cybercrime.gov.in or call helpline 1930.", { color: MUTED });
 

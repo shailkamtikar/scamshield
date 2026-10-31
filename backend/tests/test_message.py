@@ -72,6 +72,14 @@ def test_message_naming_a_brand_but_linking_elsewhere():
     assert r["verdict"] in {"SUSPICIOUS", "DANGEROUS"}
 
 
+def test_ocr_joins_links_wrapped_across_lines():
+    from app.intel.urls import extract_urls
+    from app.services.ocr import repair_url_text
+
+    text = repair_url_text("Update at http://sbi-kyc-\nupdate.top/login or call")
+    assert [u.host_ascii for u in extract_urls(text)] == ["sbi-kyc-update.top"]
+
+
 @pytest.mark.parametrize("text", ["x", "   "])
 def test_trivial_text_does_not_crash(text):
     assert run(text)["verdict"] == "SAFE"

@@ -21,14 +21,20 @@ def build_case(data: bytes, mime: str, claimed: str | None, source: str) -> Case
         raise HTTPException(status_code=503, detail=str(err)) from err
     read = vision.read_image(data, mime)
 
-    text = ocr_result.text
+    text = ocr.repair_url_text(ocr_result.text)
     sender = ""
     extra_signals = []
     method = "ocr"
     if read and read.readable and read.text.strip():
         sender = read.sender.strip()
-        ocr_urls = {u.key for u in extract_urls(ocr.repair_url_text(ocr_result.text))}
+        found = extract_urls(text)
         vis_urls = extract_urls(read.text)
+        # A line break can leave OCR with just the tail of a link. If the other
+        # reader saw a longer link containing it, that fragment is not a link.
+        for u in found:
+            if any(u.key != v.key and u.key in v.key for v in vis_urls):
+                text = text.replace(u.original, " ")
+        ocr_urls = {u.key for u in extract_urls(text)}
         if ocr_result.confidence < 65 or ocr_result.words < 6:
             text, method = read.text, "vision"
         else:
@@ -80,6 +86,6 @@ async def investigate_image_stream(
 ):
     data, mime = await read_image(file)
     return StreamingResponse(
-        stream_case(lambda: build_case(data, mime, claimed_organization, source), ("read", "Reading the screenshot (OCR + visual check)")),
+        stream_case(lambda: build_case(data, mime, claimed_organization, source), ("read", "Reading your screenshot")),
         media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

@@ -40,9 +40,9 @@ def stream_case(prepare: Callable[[], Case], pre_stage: tuple[str, str] | None =
             case = state
             detail = ""
             if name == "extract":
-                detail = f"{len(case.urls)} link(s) found"
+                detail = "1 link found" if len(case.urls) == 1 else f"{len(case.urls)} links found"
             elif name == "urls":
-                detail = ", ".join(f"{r.registrable}: {r.verdict}" for r in case.url_reports) or "no links to check"
+                detail = ", ".join(r.registrable for r in case.url_reports) or "No links to check"
                 yield sse("partial", {"urls": [r.to_dict() for r in case.url_reports]})
             elif name == "decide":
                 r = case.result
