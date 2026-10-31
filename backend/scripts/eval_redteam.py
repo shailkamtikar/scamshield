@@ -17,7 +17,7 @@ from pathlib import Path
 
 from app.engine.analysis import Case, investigate_sync
 
-FILE = Path(__file__).resolve().parents[2] / "data" / "benchmark" / "redteam.csv"
+FILE = Path(__file__).resolve().parents[2] / "data" / "benchmark" / (sys.argv[sys.argv.index("--file") + 1] if "--file" in sys.argv else "redteam.csv")
 BAD = {"PHISHING", "FRAUD_SCAM", "MALICIOUS_CONTENT"}
 NOT_MALICIOUS = {"SAFE_TRANSACTIONAL", "SAFE_PROMOTIONAL", "SAFE_OTHER", "SPAM"}
 

@@ -13,6 +13,7 @@ from app.engine import message as msg_engine
 from app.engine import verdict as V
 from app.engine.signals import WEIGHTS_VERSION, Signal, dedupe, make
 from app.engine.url_analysis import UrlReport, analyze_url
+from app.intel import email_msg
 from app.intel.trust import brand_tokens, is_shortener
 from app.intel.urls import ParsedUrl, extract_urls
 
@@ -71,6 +72,8 @@ def _scam_script(ids: set, case: "Case") -> bool:
     """Wording that is a scam script by itself: it has no honest version. Each needs a way to act or to pay."""
     if "ADVANCE_FEE" in ids and ids & {"FINANCIAL_PRESSURE", "PRIZE_LOTTERY", "JOB_TASK_SCAM", "INVESTMENT_SCAM"}:
         return True
+    if "ARREST_THREAT" in ids and re.search(r"\b(?:transfer|pay|deposit|send)\b", case.message, re.I):
+        return True
     if "ADVANCE_FEE" in ids and re.search(r"\b(?:loan|refund|prize|reward|lottery|job|offer letter|salary|gift|parcel|customs|claim)\b", case.message, re.I):
         return True
     channel = _has_unverified_channel(case)
@@ -108,6 +111,12 @@ class Case:
 
 # ------------------------------------------------------------------ steps
 def step_extract(case: Case) -> Case:
+    if case.kind == "text" and "email" not in case.extra and email_msg.looks_like_email(case.message):
+        parsed = email_msg.parse(case.message)
+        if parsed is not None:
+            case.extra["email"] = parsed.summary()
+            case.extra_signals = list(case.extra_signals) + parsed.signals
+            case.message = email_msg.body_with_links(parsed)[:40_000]
     found = extract_urls(case.message, limit=40)
     case.urls = found[:MAX_URLS]
     case.skipped_urls = [u.url for u in found[MAX_URLS:]]

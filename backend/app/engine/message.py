@@ -132,14 +132,34 @@ for _sid, _extra in {
 # Advance-fee wording, crypto bait and codes handed to a "agent" without naming the code.
 for _sid, _extra in {
     "ADVANCE_FEE": [
+        r"\b(?:customs|import|clearance|redelivery|re-delivery|handling) (?:duty|fee|fees|charges?|tax)\b.{0,70}\b(?:pay|upi|within|immediately|today)\b",
+        r"\bpay\b.{0,40}\b(?:customs|duty)\b",
         r"\b(?:pay|deposit|transfer|send|remit)\b.{0,40}\b(?:registration|processing|insurance|joining|release|clearance|security|handling|verification|gst|tax|activation|booking)\b.{0,12}\b(?:fee|fees|charges?|deposit|amount)\b",
         r"\b(?:registration|processing|insurance|joining|release|clearance|handling|activation) (?:fee|fees|charges?)\b.{0,50}\b(?:required|first|to (?:claim|release|confirm|receive|get|join))\b",
         r"\bpay\b.{0,30}\bfee\b.{0,15}\bfirst\b",
     ],
     "CREDENTIAL_REQUEST": [
         r"\b(?:share|send|tell|give|read|forward|provide)\b\W+(?:it|this|that|the code|this code|the otp|the number)\b(?!\W+(?:only|just)\b).{0,40}\b(?:agent|executive|officer|person|caller|representative|someone|team|whatsapp|call)\b",
+        r"\b(?:share|send|tell|give|read(?: out)?|forward|provide|dictate)\b(?:\W+\w+){0,4}?\W+(?:\d|six|four|5|6)[- ]?digit (?:code|otp|number|pin)\b",
+        r"\b(?:share|send|tell|give|read(?: out)?|forward|provide|dictate)\b(?:\W+\w+){0,4}?\W+(?:the )?code (?:you|that you)(?: have)?(?: just)? (?:received|got|get)\b",
+        r"\b(?:login|log in|sign in)\b.{0,50}\b(?:with|using)\b.{0,15}\b(?:net ?banking (?:id|password|credentials)|password|card number|pin|credentials)\b",
+    ],
+    "REMOTE_ACCESS_APP": [r"\ballow remote access\b", r"\bremote access\b.{0,40}\b(?:fix|repair|support|technician)\b", r"\b(?:install|download)\b.{0,30}\b(?:support|remote)\b.{0,10}\b(?:app|software|tool)\b"],
+    "FEAR_OR_THREAT": [r"\binfected with \d+ viruses\b|\bviruses? (?:detected|found)\b", r"\bdo not turn off (?:the |your )?(?:computer|device|pc)\b"],
+    "ARREST_THREAT": [
+        r"\b(?:video|photos?|recording|pictures)\b.{0,50}\b(?:send|share|leak|post|upload)\b.{0,40}\b(?:contacts|friends|family|everyone|relatives)\b", r"\bunless you pay\b",
+        r"\b(?:calling|call|message|notice|officer|inspector|this is|i am|we are)\b.{0,30}\bcyber ?(?:crime|cell)\b(?!\.)", r"\bstay on (?:the )?(?:video )?call\b", r"\b(?:safe|verification|rbi|secure) account\b.{0,40}\b(?:transfer|deposit)\b|\btransfer\b.{0,70}\b(?:safe|rbi|secure) account\b",
+        r"\baadhaar\b.{0,50}\b(?:illegal|laundering|criminal|drug)\b",
+    ],
+    "JOB_TASK_SCAM": [
+        r"\bshortlisted\b.{0,70}\b(?:part[- ]?time|work from home|role|job|position)\b", r"\brat(?:e|ing) (?:products?|hotels?|restaurants?|movies?|videos?)\b",
+        r"\bpart[- ]?time (?:role|position)\b",
+    ],
+    "PRIZE_LOTTERY": [
+        r"\b\d[\d.,]*\s*(?:million|billion)\s*(?:usd|dollars|us\$)\b", r"\bbusiness proposal\b", r"\b(?:transfer|move) (?:out of|from) (?:my )?country\b",
     ],
     "INVESTMENT_SCAM": [
+        r"\bmake you rich\b|\bcrypto arbitrage\b", r"\binvest\b.{0,40}\b(?:send|get|receive|give|pay)\b.{0,30}\bback\b",
         r"\b\d{1,3}x returns?\b", r"\breturns? guaranteed\b", r"\bpre-?launch (?:coin|token|ico)\b", r"\bdeposit (?:usdt|btc|eth|crypto)\b",
         r"\bguaranteed\b.{0,30}\b(?:monthly|weekly|daily)\b.{0,15}\b(?:returns?|profit|income)\b",
     ],
@@ -216,7 +236,7 @@ GENUINE_ALERT = [
 
 # Ads and offers: harmless to read, but where their link leads is unknown. Needs two different cues.
 PROMO_STRONG = [
-    r"\b\d{1,3}\s?% ?(?:off|discount|cashback)\b", r"\bflat\b.{0,20}\boff\b", r"\b(?:sale|offers?|discounts?|coupons?|cash ?back|deals?|dhamaka)\b",
+    r"\b\d{1,3}\s?% ?(?:off|discount|cashback)\b", r"\bflat\b.{0,20}\boff\b", r"\b(?:sale|offers?(?!\s+(?:letter|you\b|of employment))|discounts?|coupons?|cash ?back|deals?|dhamaka)\b",
     r"\bt&?cs? apply\b|\bterms (?:and|&) conditions apply\b", r"\b(?:marketing|promotional|advertis\w+) (?:e-?mail|message|communication)\b",
     r"\bfree (?:trial|demo|delivery|membership|for (?:one|1|\d+) (?:month|week|day)s?)\b|\btry\b.{0,30}\bfree\b",
     r"\b(?:shop|order|buy|enrol+|sign ?up|register|book)\b\W+(?:\w+\W+){0,2}(?:now|today)\b", r"\bpre-?approved\b|\blifetime[- ]free\b|\bexchange bonus\b",
@@ -232,8 +252,8 @@ PROMO_STRONG = [
 
 # Everyday notices: needs two different cues. Only used when nothing risky was found.
 TRANSACTION_CUES = [
-    r"\b(?:debited|credited|deducted|received|withdrawn|paid|spent|refunded|refund)\b", r"\b(?:rs\.?|inr|₹)\s?\d", r"\b(?:upi|neft|imps|rtgs|a/c|acct|account|balance|avl)\b",
-    r"\b(?:payment|recharge|transaction|order|booking|ticket|pnr|invoice|receipt|statement|premium|emi|bill|policy|subscription|renews?|appointment|shipment|parcel|package|awb|delivery|delivered|shipped|loan|application|itr|intimation|return|kyc|re-?kyc|branch|official (?:banking )?(?:app|application)|mobile banking)\b",
+    r"\b(?:debited|credited|deducted|received|withdrawn|paid|pay|payable|spent|refunded|refund)\b", r"\b(?:rs\.?|inr|₹)\s?\d", r"\b(?:upi|neft|imps|rtgs|a/c|acct|account|balance|avl)\b",
+    r"\b(?:payment|recharge|transaction|order|booking|ticket|pnr|invoice|receipt|statement|premium|emi|bill|policy|subscription|renews?|appointment|shipment|parcel|package|awb|delivery|delivered|shipped|loan|application|itr|intimation|return|kyc|re-?kyc|branch|tax|penalty|last date|fees?|official (?:banking )?(?:app|application)|mobile banking)\b",
     r"\b(?:successful(?:ly)?|confirmed|approved|generated|processed|failed|due on|due date|will be delivered|out for delivery|has been (?:shipped|delivered|dispatched))\b",
     r"\b(?:sign-?in|login|logged in|password (?:was )?(?:changed|reset)|new device|security alert|otp)\b",
     r"(?:जमा|वजा|डेबिट|क्रेडिट|खाते|खात्या|भुगतान)", r"(?:रुपये|रु\.|संदर्भ|बँक|बैंक|एसबीआई)",

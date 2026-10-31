@@ -112,7 +112,7 @@ def test_text_endpoint(client):
 
 def test_unknown_and_oversized_fields_rejected(client):
     assert client.post("/investigate", json={"message": "hi", "image_path": "C:/Windows/win.ini"}).status_code == 422
-    assert client.post("/investigate", json={"message": "x" * 6000}).status_code == 422
+    assert client.post("/investigate", json={"message": "x" * 50000}).status_code == 422
     assert client.post("/investigate", json={}).status_code == 422
 
 

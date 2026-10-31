@@ -94,14 +94,14 @@ export default function AnalyzeForm({ mode, onMode, onSubmit }) {
               ref={area}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              maxLength={5000}
+              maxLength={40000}
               rows={5}
               placeholder="Paste the suspicious message here…"
               aria-label="Message to check"
               className="block min-h-[150px] w-full resize-none border hairline bg-ink/60 p-4 text-[15px] leading-relaxed text-text outline-none transition-colors placeholder:text-faint focus:border-[rgba(var(--tint),0.6)]"
             />
             <div className="mt-2 flex items-center justify-between">
-              <span className="font-mono text-[11px] text-faint">{message.length.toLocaleString()} / 5,000</span>
+              <span className="font-mono text-[11px] text-faint">{message.length.toLocaleString()} / 40,000</span>
               <div className="relative">
                 <button type="button" onClick={() => setExamples((v) => !v)} className="inline-flex items-center gap-1 font-mono text-[11px] tint-text hover:underline" aria-expanded={examples}>
                   Try an example <ChevronDown size={12} className={examples ? "rotate-180 transition-transform" : "transition-transform"} />
