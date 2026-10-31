@@ -8,6 +8,7 @@ confidence.
 
 import re
 
+from app.engine import classify
 from app.engine import verdict as V
 from app.engine.analysis import Case
 from app.engine.signals import make
@@ -114,6 +115,7 @@ def explain(case: Case, use_llm: bool = True) -> Case:
         result["risk_score"] = max(result["risk_score"], 30)
         result["risk_level"] = V.risk_level_for("SUSPICIOUS", result["risk_score"])
         result["assurance"] = None
+        classify.apply(result)
         result["confidence"] = min(result["confidence"], 0.7)
         result["decision_path"].append("L1_LLM_SECOND_OPINION")
         result["evidence"].insert(0, f"{sig.label}: {sig.explanation}")

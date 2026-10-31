@@ -62,6 +62,7 @@ CATALOG: dict[str, tuple[str, int, str, str]] = {
     "FINANCIAL_PRESSURE": ("risk", 15, "moderate", "Financial pressure or reward bait"),
     "SUSPICIOUS_CTA": ("risk", 8, "weak", "Pushes you to click or call"),
     "KYC_UPDATE": ("risk", 20, "moderate", "Fake KYC / account-update pretext"),
+    "ADVANCE_FEE": ("risk", 35, "strong", "Asks you to pay a fee before you get money, a job or a prize"),
     "PRIZE_LOTTERY": ("risk", 20, "moderate", "Prize / lottery bait"),
     "JOB_TASK_SCAM": ("risk", 25, "moderate", "Work-from-home / task-payment scam pattern"),
     "REMOTE_ACCESS_APP": ("risk", 30, "strong", "Asks you to install a remote-access app"),

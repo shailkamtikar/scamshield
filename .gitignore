@@ -33,3 +33,6 @@ reports/
 *.log
 .coverage
 htmlcov/
+
+# private real messages used for local testing (contain personal details)
+data/benchmark/real_*.txt

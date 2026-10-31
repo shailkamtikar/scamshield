@@ -8,6 +8,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
+from app.engine import classify
 from app.engine import message as msg_engine
 from app.engine import verdict as V
 from app.engine.signals import WEIGHTS_VERSION, Signal, dedupe, make
@@ -21,7 +22,7 @@ SEV = {"SAFE": 0, "COULD_NOT_VERIFY": 1, "SUSPICIOUS": 2, "DANGEROUS": 3}
 # "immediately" or "click here" appear in genuine notices and are not enough.
 RISKY_CONTEXT_IDS = {
     "FEAR_OR_THREAT", "CREDENTIAL_REQUEST", "KYC_UPDATE", "FINANCIAL_PRESSURE", "PRIZE_LOTTERY",
-    "ARREST_THREAT", "JOB_TASK_SCAM", "APK_INSTALL", "UPI_COLLECT_SCAM", "REMOTE_ACCESS_APP", "INVESTMENT_SCAM",
+    "ARREST_THREAT", "JOB_TASK_SCAM", "APK_INSTALL", "UPI_COLLECT_SCAM", "REMOTE_ACCESS_APP", "INVESTMENT_SCAM", "ADVANCE_FEE",
 }
 
 
@@ -42,12 +43,14 @@ def _has_unverified_channel(case: "Case") -> bool:
         return True
     if entities.get("upi_ids"):
         return True
+    if re.search(r"\b(?:pay|deposit|transfer|send|remit)\b.{0,40}(?:rs\.?|inr|₹)\s?\d", case.message, re.I):
+        return True  # being asked to hand over money is a way to act on the message
     return bool(re.search(r"\b(?:whatsapp|telegram|signal)\b", case.message, re.I))
 
 
 # Ways a real institution tells you to resolve something that do not involve a link we cannot verify.
 SELF_SERVICE = re.compile(
-    r"\b(?:in|on|via|through|using|from) (?:the |our |your )?(?:\w+ ){0,2}(?:app|website|portal|net ?banking|mobile banking|play ?store|app ?store)\b"
+    r"\b(?:in|on|via|through|using|from|open) (?:the |our |your )?(?:official )?(?:\w+ ){0,4}(?:app|application|website|portal|net ?banking|mobile banking|play ?store|app ?store)\b"
     r"|\bvisit (?:your |the |any |our )?(?:nearest |home |local |closest )?(?:\w+ )?(?:branch|store|office|outlet|centre|center|station|counter)\b"
     r"|\b(?:ignore|disregard) (?:this )?(?:message )?if (?:already )?(?:done|completed|paid)\b|\bno (?:further )?action (?:is )?(?:needed|required)\b"
     r"|\bcontact (?:your )?(?:home )?(?:branch|bank|relationship manager)\b",
@@ -62,6 +65,27 @@ def _has_self_service_route(case: "Case") -> bool:
     if any(p.lstrip("+").removeprefix("91").startswith(TOLL_FREE) for p in entities.get("phones", [])):
         return True
     return bool(SELF_SERVICE.search(case.message))
+
+
+def _scam_script(ids: set, case: "Case") -> bool:
+    """Wording that is a scam script by itself: it has no honest version. Each needs a way to act or to pay."""
+    if "ADVANCE_FEE" in ids and ids & {"FINANCIAL_PRESSURE", "PRIZE_LOTTERY", "JOB_TASK_SCAM", "INVESTMENT_SCAM"}:
+        return True
+    if "ADVANCE_FEE" in ids and re.search(r"\b(?:loan|refund|prize|reward|lottery|job|offer letter|salary|gift|parcel|customs|claim)\b", case.message, re.I):
+        return True
+    channel = _has_unverified_channel(case)
+    if channel and ids & {"PRIZE_LOTTERY", "INVESTMENT_SCAM", "JOB_TASK_SCAM"}:
+        return True
+    if channel and "CREDENTIAL_REQUEST" in ids:
+        return True  # a real bank never asks for a code, PIN or password and also hands you a number or link of its own
+    return bool(channel and "FEAR_OR_THREAT" in ids and "PHONE_CALL_TO_ACTION" in ids)
+
+
+def identified_sender(case: "Case") -> bool:
+    """True if the message names an organisation or links to a verified one, so an advert can be tied to someone."""
+    if case.msg and case.msg.mentioned_brands:
+        return True
+    return any(r.trust["tier"] == "OFFICIAL" for r in case.url_reports)
 
 
 @dataclass
@@ -150,6 +174,9 @@ def step_decide(case: Case) -> Case:
     elif ids & V.FAKE_IDS:
         msg_verdict = "DANGEROUS"
         path.append("M7_IMPERSONATION_SIGNAL")
+    elif _scam_script(ids, case):
+        msg_verdict = "DANGEROUS"
+        path.append("M8_KNOWN_SCAM_SCRIPT")
     elif ids & {"UPI_COLLECT_SCAM", "REMOTE_ACCESS_APP"}:
         msg_verdict = "DANGEROUS"
         path.append("M4_COLLECT_OR_REMOTE_ACCESS")
@@ -273,6 +300,7 @@ def step_decide(case: Case) -> Case:
         "informational_wording": informational,
     }
     case.result.update(case.extra)
+    classify.apply(case.result, identified_sender(case))
     return case
 
 

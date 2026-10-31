@@ -41,8 +41,9 @@ PATTERNS: dict[str, list[str]] = {
         r"\babhi\b", r"\bturant\b", r"\bjaldi\b", r"\bat once\b", r"\bwithout delay\b",
     ],
     "FEAR_OR_THREAT": [
-        r"\b(?:suspended|blocked|deactivated|terminated|disconnected|frozen|locked|restricted|banned)\b",
+        r"\b(?:account|a/c|acct|card|sim|number|service|services|connection|wallet|upi|id|policy|licen[cs]e|aadhaar|aadhar|pan|profile|login|access|netbanking|net banking|mobile|line|membership|subscription|kyc|fastag|gst|loan|demat|trading)\b(?:\W+\w+){0,5}?\W+(?:suspended|blocked|deactivated|terminated|disconnected|frozen|locked|restricted|banned)\b", r"\b(?:suspended|blocked|deactivated|terminated|disconnected|frozen|locked|restricted|banned)\b(?:\W+\w+){0,3}?\W+(?:your|ur|the|my|this)?\W*(?:\w+\W+){0,2}(?:account|a/c|acct|card|sim|number|service|services|connection|wallet|upi|id|policy|licen[cs]e|aadhaar|aadhar|pan|profile|login|access|netbanking|net banking|mobile|line|membership|subscription|kyc|fastag|gst|loan|demat|trading)\b",
         r"\bwill be (?:blocked|suspended|closed|disconnected|deactivated|terminated|cancelled|canceled)\b",
+        r"\b(?:be|been|get|gets|getting) (?:suspended|blocked|deactivated|terminated|disconnected|frozen|locked|restricted|banned)\b",
         r"\blegal action\b", r"\bpenalt(?:y|ies)\b", r"\bfir\b", r"\bcase (?:has been )?(?:filed|registered)\b",
         r"\bband ho\s*(?:jayega|jaega|jayegi)\b", r"\bbloc?k ho\b", r"\baccount (?:closed|closure)\b",
     ],
@@ -128,6 +129,25 @@ for _sid, _extra in {
     PATTERNS[_sid].extend(_extra)
 
 
+# Advance-fee wording, crypto bait and codes handed to a "agent" without naming the code.
+for _sid, _extra in {
+    "ADVANCE_FEE": [
+        r"\b(?:pay|deposit|transfer|send|remit)\b.{0,40}\b(?:registration|processing|insurance|joining|release|clearance|security|handling|verification|gst|tax|activation|booking)\b.{0,12}\b(?:fee|fees|charges?|deposit|amount)\b",
+        r"\b(?:registration|processing|insurance|joining|release|clearance|handling|activation) (?:fee|fees|charges?)\b.{0,50}\b(?:required|first|to (?:claim|release|confirm|receive|get|join))\b",
+        r"\bpay\b.{0,30}\bfee\b.{0,15}\bfirst\b",
+    ],
+    "CREDENTIAL_REQUEST": [
+        r"\b(?:share|send|tell|give|read|forward|provide)\b\W+(?:it|this|that|the code|this code|the otp|the number)\b(?!\W+(?:only|just)\b).{0,40}\b(?:agent|executive|officer|person|caller|representative|someone|team|whatsapp|call)\b",
+    ],
+    "INVESTMENT_SCAM": [
+        r"\b\d{1,3}x returns?\b", r"\breturns? guaranteed\b", r"\bpre-?launch (?:coin|token|ico)\b", r"\bdeposit (?:usdt|btc|eth|crypto)\b",
+        r"\bguaranteed\b.{0,30}\b(?:monthly|weekly|daily)\b.{0,15}\b(?:returns?|profit|income)\b",
+    ],
+    "FINANCIAL_PRESSURE": [r"\bpre-?approved\b.{0,30}\bloan\b.{0,80}\b(?:pay|fee|deposit|insurance)\b"],
+}.items():
+    PATTERNS.setdefault(_sid, []).extend(_extra)
+
+
 # Hinglish, family-impersonation, advance-fee and "approve with PIN" tricks.
 for _sid, _extra in {
     "FEAR_OR_THREAT": [
@@ -195,6 +215,30 @@ GENUINE_ALERT = [
 ]
 
 # Ads and offers: harmless to read, but where their link leads is unknown. Needs two different cues.
+PROMO_STRONG = [
+    r"\b\d{1,3}\s?% ?(?:off|discount|cashback)\b", r"\bflat\b.{0,20}\boff\b", r"\b(?:sale|offers?|discounts?|coupons?|cash ?back|deals?|dhamaka)\b",
+    r"\bt&?cs? apply\b|\bterms (?:and|&) conditions apply\b", r"\b(?:marketing|promotional|advertis\w+) (?:e-?mail|message|communication)\b",
+    r"\bfree (?:trial|demo|delivery|membership|for (?:one|1|\d+) (?:month|week|day)s?)\b|\btry\b.{0,30}\bfree\b",
+    r"\b(?:shop|order|buy|enrol+|sign ?up|register|book)\b\W+(?:\w+\W+){0,2}(?:now|today)\b", r"\bpre-?approved\b|\blifetime[- ]free\b|\bexchange bonus\b",
+    r"\beasy apply\b|\bjobs that match\b|\bstart a lesson\b|\bget top prep\b|\buse code\b|\bpromo code\b",
+    r"\bwe(?:'re| are) hiring\b|\bjob openings?\b|\bopenings? (?:at|for)\b|\bequal opportunity employer\b",
+    r"(?:सेल|छूट|ऑफर|ऑफ़र|डिस्काउंट|सवलत)",
+    r"\b(?:upgrade|renew)\b.{0,40}\b(?:plan|offer|fiber|pack|membership|insurance)\b", r"\binvit\w+ you\b|\bearly access\b|\bfirst \w+ free\b",
+    r"(?:rs\.?|inr|₹)\s?[\d,]+\s*(?:/|per )\s*(?:month|mo|year|yr)\b", r"\bsite visit\b|\brera\b|\b\d ?bhk\b",
+    r"\b(?:festival|festive|diwali|navratri|big billion|great indian)\b.{0,60}\b(?:sale|offers?|shop|starts?)\b", r"\bapply (?:now|instantly|in \d)\b",
+    r"\b(?:buy|get) \d+ (?:get|free)\b|\bbogo\b|\bvisit (?:our |the |us at )?(?:store|shop|showroom|outlet)\b",
+    r"(?:अभी खरीदें|नियम और शर्तें|खरेदी करा|अटी लागू|शर्तें लागू)",
+]
+
+# Everyday notices: needs two different cues. Only used when nothing risky was found.
+TRANSACTION_CUES = [
+    r"\b(?:debited|credited|deducted|received|withdrawn|paid|spent|refunded|refund)\b", r"\b(?:rs\.?|inr|₹)\s?\d", r"\b(?:upi|neft|imps|rtgs|a/c|acct|account|balance|avl)\b",
+    r"\b(?:payment|recharge|transaction|order|booking|ticket|pnr|invoice|receipt|statement|premium|emi|bill|policy|subscription|renews?|appointment|shipment|parcel|package|awb|delivery|delivered|shipped|loan|application|itr|intimation|return|kyc|re-?kyc|branch|official (?:banking )?(?:app|application)|mobile banking)\b",
+    r"\b(?:successful(?:ly)?|confirmed|approved|generated|processed|failed|due on|due date|will be delivered|out for delivery|has been (?:shipped|delivered|dispatched))\b",
+    r"\b(?:sign-?in|login|logged in|password (?:was )?(?:changed|reset)|new device|security alert|otp)\b",
+    r"(?:जमा|वजा|डेबिट|क्रेडिट|खाते|खात्या|भुगतान)", r"(?:रुपये|रु\.|संदर्भ|बँक|बैंक|एसबीआई)",
+]
+
 PROMO_CUES = [
     r"\b\d{1,3}\s?% ?(?:off|discount|cashback)\b", r"\bflat (?:rs\.?|inr|₹)?\s?\d", r"\bup ?to (?:rs\.?|inr|₹)?\s?[\d,]+ ?(?:off|lakh|cashback)",
     r"\b(?:sale|offers?|discount|deals?|coupon|voucher|dhamaka|clearance|exchange bonus|lifetime[- ]free|pre-?approved|membership)\b",
@@ -236,7 +280,7 @@ def mentioned_brands(text: str, extra: tuple[str, ...] = ()):
     for token, brand in brand_tokens().items():
         if len(token) < 3 or token in GENERIC_BRAND_WORDS:
             continue
-        if re.search(rf"\b{re.escape(token)}\b", low) and brand.name not in seen:
+        if re.search(r"\b{re.escape(token)}\b", low) and brand.name not in seen:
             seen.add(brand.name)
             found.append(brand)
     # also the brand's full name written with spaces, e.g. "ICICI Bank"
@@ -267,6 +311,8 @@ def analyze(text: str, claimed: str | None = None, source: str = "web") -> Messa
                     before = low[max(0, m.start() - 70) : m.start()]
                     if NEGATION.search(before + low[m.start() : m.start() + 1]) or NEGATION.search(before):
                         continue
+                    if re.match(r"\W*(?:is\W+|:\W*)?\d{4,8}\b", low[m.end() : m.end() + 20]) and re.search(r"otp|code|passcode", m.group(0)):
+                        continue  # the code is printed in the message: it is being delivered, not asked for
                     if re.search(r"wi-?\s?fi", m.group(0)):
                         continue  # a Wi-Fi password is not an account secret
                     if OPEN_FILE_CONTEXT.match(low[m.end() : m.end() + 40]):
@@ -294,8 +340,10 @@ def analyze(text: str, claimed: str | None = None, source: str = "web") -> Messa
         result.message_type = "otp"
     elif result.genuine_alert:
         result.message_type = "transaction"
-    elif len({i for i, p in enumerate(PROMO_CUES) if re.search(p, low)}) >= 2:
+    elif any(re.search(p, low) for p in PROMO_STRONG) and len({i for i, p in enumerate(PROMO_CUES + PROMO_STRONG) if re.search(p, low)}) >= 2:
         result.message_type = "promotion"
+    elif len({i for i, p in enumerate(TRANSACTION_CUES) if re.search(p, low)}) >= 2:
+        result.message_type = "transaction"
 
     if result.genuine_alert and not any(s.id in {"CREDENTIAL_REQUEST", "FEAR_OR_THREAT", "ARREST_THREAT", "UPI_COLLECT_SCAM", "PRIZE_LOTTERY"} for s in result.signals):
         result.signals.append(make("GENUINE_ALERT_PATTERN", "The wording matches a standard bank / OTP alert template.", "message", None))
