@@ -1,62 +1,85 @@
-import { Moon, Sun } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { MODE_CONFIG } from "../lib/modes";
 
-export function Logo({ size = 28 }) {
+function UtcClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <span>{now.toISOString().slice(11, 19)}Z</span>;
+}
+
+function RailItem({ label, children }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden className="shrink-0">
-      <rect width="32" height="32" rx="8" fill="var(--brand)" />
-      <path d="M16 6.5 8.5 9.8v5.6c0 4.7 3.2 8 7.5 9.8 4.3-1.8 7.5-5.1 7.5-9.8V9.8L16 6.5Z" fill="none" stroke="var(--on-brand)" strokeWidth="2" />
-      <path d="m12.5 15.8 2.5 2.5 4.5-4.6" fill="none" stroke="var(--on-brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <div className="border-b hairline py-4">
+      <div className="label mb-1.5">{label}</div>
+      <div className="font-mono text-[12px] text-text">{children}</div>
+    </div>
   );
 }
 
-function ThemeToggle() {
-  const [dark, setDark] = useState(() => document.documentElement.dataset.theme === "dark");
-  useEffect(() => {
-    if (dark) document.documentElement.dataset.theme = "dark";
-    else delete document.documentElement.dataset.theme;
-    try {
-      localStorage.setItem("ss-theme", dark ? "dark" : "light");
-    } catch {
-      /* the choice just won't be remembered */
-    }
-  }, [dark]);
+export function StatusDot({ health }) {
+  const online = health?.status === "ok";
+  const known = health !== undefined;
+  const color = !known ? "bg-faint" : online ? "bg-safe" : "bg-danger";
   return (
-    <button type="button" onClick={() => setDark((d) => !d)} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} className="flex h-9 w-9 items-center justify-center rounded-full text-soft transition-colors hover:bg-sunken">
-      {dark ? <Sun size={18} /> : <Moon size={18} />}
-    </button>
+    <span className="relative inline-flex h-2 w-2">
+      {online && <span className="absolute inset-0 rounded-full bg-safe" style={{ animation: "pulse-ring 2s ease-out infinite" }} />}
+      <span className={`relative h-2 w-2 rounded-full ${color}`} />
+    </span>
   );
 }
 
 export function Header({ health, onHome }) {
-  const offline = health === null;
+  const online = health?.status === "ok";
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-page/85 backdrop-blur-md">
-      <div className="mx-auto flex h-[60px] max-w-[880px] items-center justify-between px-4 sm:px-6">
-        <button type="button" onClick={onHome} className="flex items-center gap-2.5" aria-label="ScamShield home">
-          <Logo />
-          <span className="font-serif text-[19px] font-semibold tracking-tight">ScamShield</span>
+    <header className="fixed inset-x-0 top-0 z-40 border-b hairline bg-ink/70 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-[1320px] items-center justify-between px-4 sm:px-6 lg:pl-[168px]">
+        <button onClick={onHome} className="flex items-center gap-3" aria-label="ScamShield home">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M12 2 4 5.5v6c0 5 3.4 8.6 8 10.5 4.6-1.9 8-5.5 8-10.5v-6L12 2Z" stroke="rgb(var(--tint))" strokeWidth="1.6" />
+            <path d="m8.5 12 2.5 2.5L15.5 9.5" stroke="rgb(var(--tint))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="display text-[22px] tracking-wide">ScamShield</span>
         </button>
-        <div className="flex items-center gap-2">
-          {offline && <span className="rounded-full bg-sunken px-3 py-1 text-[13px] text-soft">Service unavailable</span>}
-          <ThemeToggle />
+        <div className="flex items-center gap-4">
+          <span className="label hidden sm:inline">Free · No sign-up · Nothing stored</span>
+          <span className="flex items-center gap-2 rounded-full border hairline px-3 py-1">
+            <StatusDot health={health} />
+            <span className="label !text-[10px]">{health === undefined ? "Checking" : online ? "Engine online" : "Engine offline"}</span>
+          </span>
         </div>
       </div>
     </header>
   );
 }
 
+export function Rail({ health, mode, phase, stagesDone, stagesTotal }) {
+  const providers = health?.providers ? Object.entries(health.providers) : [];
+  const active = providers.filter(([, on]) => on).length;
+  return (
+    <aside className="fixed bottom-0 left-0 top-14 z-30 hidden w-[140px] border-r hairline px-5 lg:block">
+      <RailItem label="Mode">{MODE_CONFIG[mode].no} / {MODE_CONFIG[mode].label}</RailItem>
+      <RailItem label="State">
+        <span className="tint-text">{phase === "idle" ? "Ready" : phase === "scanning" ? `Scanning ${stagesDone}/${stagesTotal || 5}` : phase === "result" ? "Report" : "Error"}</span>
+      </RailItem>
+      <RailItem label="Intel sources">
+        {health ? `${active} / ${providers.length} live` : "—"}
+      </RailItem>
+      <RailItem label="Time"><UtcClock /></RailItem>
+      <motion.div className="mt-6 h-px origin-left bg-[rgb(var(--tint))]" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} />
+    </aside>
+  );
+}
+
 export function Footer() {
   return (
-    <footer className="mt-10 border-t border-line">
-      <div className="mx-auto max-w-[880px] space-y-2 px-4 py-8 text-[14px] leading-relaxed text-soft sm:px-6">
-        <p>
-          <b className="font-semibold text-ink">Lost money or shared an OTP?</b> Call the national cyber helpline <b className="font-semibold text-ink">1930</b> straight away, or report at cybercrime.gov.in.
-        </p>
-        <p>
-          ScamShield gives an automated opinion, not a guarantee. We don't keep what you check, but to analyse it we send the text to Google Gemini and the links to security services such as Google Safe Browsing and VirusTotal, so please don't paste passwords or OTPs.
-        </p>
+    <footer className="border-t hairline px-4 py-8 sm:px-6 lg:pl-[168px]">
+      <div className="mx-auto flex max-w-[1320px] flex-col gap-2 text-[12px] text-faint sm:flex-row sm:justify-between">
+        <span>ScamShield is an automated assessment, not a guarantee. If you lost money, call <b className="text-muted">1930</b> or report at cybercrime.gov.in.</span>
+        <span className="font-mono sm:max-w-[360px] sm:text-right">We don't keep what you check. To analyse it we send the text to Google Gemini and links to security services, so never paste passwords or OTPs.</span>
       </div>
     </footer>
   );

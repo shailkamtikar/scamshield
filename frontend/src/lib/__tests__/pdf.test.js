@@ -45,7 +45,7 @@ describe("PDF report", () => {
     const doc = buildReportPdf(meta());
     expect(doc.getNumberOfPages()).toBeGreaterThan(1);
     const text = doc.output();
-    expect(text).toContain("This looks like a scam");
+    expect(text).toContain("Dangerous");
     expect(text).not.toContain("http://sbi-kyc-update.top");
   });
 

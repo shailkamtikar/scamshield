@@ -1,80 +1,75 @@
 # ScamShield – build status
 
-Last updated at the end of the local build (phases 0–8 of `docs/playbook`). Deployment (phase 9) is intentionally not done yet.
+Local build (phases 0–8). Deployment is not done yet.
 
-## What works (verified)
+## What was verified
 
-| Area | State | How it was verified |
+| Area | State | Evidence |
 |---|---|---|
-| Message analysis | Done | 97 offline backend tests, two message benchmarks (below) |
-| Link intelligence (parse, trust registry, lookalikes, gibberish, redirects, feeds, domain age, page inspection) | Done | unit tests, URL benchmark, live checks against Google Safe Browsing / VirusTotal / URLhaus / OpenPhish with the team's keys |
-| Screenshot reading (OCR + Gemini vision) | Done | generated light/dark SMS screenshots read correctly and scored correctly; OCR unit tests |
-| QR codes (image upload) | Done | generated codes incl. rotated, small, multi-code images; UPI, Spotify, URL, Wi-Fi, crypto, `javascript:` payloads |
-| Live camera QR scanner | Built and unit-tested; **not tested on a real phone** (the in-app browser blocks the camera) | error handling verified; use `start-phone.bat` to test on a phone |
-| Streaming progress (SSE) | Done | API tests (event order, error events) and seen live in the UI |
-| Frontend (cinematic dark UI, mobile, PDF report, verdict-tinted scenes) | Done | lint, 6 unit tests, production build, manual run-through of scam / safe / mobile layouts |
-| CI | Workflow added (`.github/workflows/ci.yml`); result not checked from here | check the repo's Actions tab |
-| Deployment (Render / Vercel / uptime monitor) | **Not done** | needs your accounts; see `docs/playbook/08-phase9-release.md` |
+| Message, screenshot and QR analysis | Done | 114 backend tests, benchmarks below, run through the real UI |
+| Link checks (structure, lookalikes, redirects, feeds, domain age) | Done | live runs against Google Safe Browsing, VirusTotal, URLhaus, OpenPhish, Phishing.Database |
+| **Page inspection (text-only "sandbox")** | Done, calibrated on 560 real pages | see below |
+| **Browser sandbox (urlscan.io)** | Built and tested with mocked responses; **only earlier public scans are used until a `URLSCAN_API_KEY` is added** | tests; not run against a live submission |
+| Learned domain-name model | Done | trained on 159k real phishing domains vs. 950k ordinary ones; 0.90 AUC on unseen OpenPhish domains |
+| Live camera QR scanner | Built; **not tested on a real phone** | error handling verified only |
+| Frontend (dark cinematic UI, restored on request) | Done | lint, 8 unit tests incl. PDF, production build, manual runs |
+| CI | Workflow present; result not checked from here | check the Actions tab |
+| Deployment | **Not done** | |
 
-## Accuracy – measured, with caveats
+## What the "sandbox" really is
 
-Gates agreed with the sponsor: detection ≥ 90 %, false positives on safe links ≤ 3 %, overall ≥ 90 %.
+Two different things, and they should not be confused:
 
-### Links (`backend/scripts/evaluate.py`, benchmark in `data/benchmark/urls.csv`)
+1. **Text-only page inspection (built in, always on).** The server downloads a link's HTML *as text* (no scripts run, nothing saved, size and time capped, private addresses blocked) and looks at the title, forms and links. Measured on 560 real pages: it works on about 85–90 % of sites, but ~16–23 % of pages are blank without JavaScript, so it cannot see them. Findings are used carefully: an ordinary login form is only a weak signal (it appeared on 6.6 % of safe sites); a hosting provider's own "Suspected phishing" warning page (46 % of the phishing pages sampled) is treated as decisive.
+2. **Real-browser sandbox (urlscan.io, optional).** urlscan opens the link in an isolated browser on its own machines and returns a verdict, final address, domain age and a screenshot. Without a key we can only reuse scans others already made. With a key, new scans are submitted as *unlisted* and take about 10–25 seconds. This is the part that sees JavaScript-only pages.
 
-The bad links are real feed entries (OpenPhish) plus synthetic scam patterns; the safe links are popular sites the engine's trust list does **not** contain (Tranco rank 50k–400k), curated real sites, and "login-style" paths on real sites.
+## Accuracy, measured honestly
 
-| Mode | Detection | False positives | Accuracy |
-|---|---|---|---|
-| **Static** (no network: structure, lookalikes, trust list only) – n = 1,228 | 82.9 % | 1.6 % | 91.6 % |
-| **Live** (adds Safe Browsing / URLhaus / OpenPhish lookups, never opens the links) – held-out test split, n = 253 | 99.1 % | 2.2 % | 98.4 % |
+Gates agreed with the sponsor: detection ≥ 90 %, false positives ≤ 3 %, overall ≥ 90 %. "Dead" links (don't exist) are reported as *couldn't verify* and are excluded from these counts.
 
-Read these honestly:
-- Static detection of **real feed phishing** is ~60–70 %: many real phishing pages sit on innocent-looking or hacked sites that nothing in the address gives away. Those are caught only if a feed has already listed them, or by page inspection when the page can be fetched.
-- The live detection figure is high partly *because* the benchmark's phishing links come from the same feeds the engine queries. A brand-new phishing site that no feed has seen yet will behave like the static figure. The 90 % goal for completely unseen phishing is **not** demonstrated.
-- Most of the benchmark's "false alarms" are random-string domains (e.g. `qihuiwzf.com`) that happen to be in the popularity list; the engine calls them dangerous on purpose (gibberish domains). Treat them as arguable rather than clear errors.
-- Malware-download links (e.g. files hosted on github.com) are a different problem from phishing and are excluded from the gate (`--include-malware` shows them).
+### Links (`backend/scripts/evaluate.py`)
+
+| Condition | Detection of phishing | False alarms on safe sites |
+|---|---|---|
+| No network at all (structure + trust + learned model only) | 84.6 % | 1.6 % |
+| **Brand-new phishing: all threat feeds switched off, but links followed and pages inspected** | **91.9 %** | **2.6 %** (13 of 492 live safe sites) |
+| Everything on, feeds included | 100 % (partly by construction: the test links come from those feeds) | same as above |
+
+The 91.9 % row is the honest figure for phishing nobody has listed yet. It still leans on hosting providers' own warning pages, which only exist for pages already reported to them, so a truly day-zero site on a clean-looking domain can be missed. Most remaining false alarms are random-string domains found in popularity lists (e.g. `qihuiwzf.com`), which the engine flags on purpose.
+
+**Confidence is meaningful:** results the engine rated ≥ 0.9 were right 98–100 % of the time; the phishing it missed carried confidence below 0.8, labelled "no problems found" rather than "safe".
 
 ### Messages (`backend/scripts/eval_messages.py`)
 
-| Set | Detection | False positives |
+| Set | Rules only | With Gemini second opinion |
 |---|---|---|
-| 542 template-generated India-focused messages (`messages.csv`) | 100 % | 0 % |
-| 51 hand-written messages (`messages_handwritten.csv`) | 100 % | 0 % *after tuning*; the first, untuned run was 85.7 % detection and 4.3 % false positives |
+| 542 template messages (written with the rules, so not independent) | 100 % / 0 % false alarms | – |
+| 51 hand-written messages (tuned afterwards, so not independent) | 100 % / 0 % | – |
+| **48 messages written after the engine was frozen (`messages_heldout.csv`)** | **54 % detection, 8 % false alarms** | **96 % detection, 8 % false alarms** (one miss: a Telegram investment link) |
 
-The template set was written together with the rules, so its 100 % says little. The hand-written set was a fair test only on its first run (85.7 % / 4.3 %); after fixing the misses it is no longer independent. Real SMS from the sponsor would be the proper test.
+So the *rules alone* miss scams written in wording they weren't designed for; Gemini's second opinion is what catches them. If Gemini is unavailable (no key, quota, outage) the engine falls back to the rules and accuracy on new scam scripts drops to roughly the first column. A learned local text model was tried and **rejected** because it did poorly on this held-out set (71 % detection, 29 % false alarms).
+
+## Hardening added
+
+Per-IP rate limits (429 with Retry-After), optional access key, request ids, security headers, logs that never contain message text, hard time limits on link fetching, Hindi (Devanagari) scam patterns, multi-QR images through the streaming path, "valid payment request" and "no problems found" distinguished from "verified safe".
 
 ## Known limits
 
-- New phishing sites on clean-looking domains can slip through until feeds list them (see above).
-- Free tiers: VirusTotal allows 4 lookups/minute and 500/day (used only for unknown domains, cached 24 h); if a source is down or over quota the engine still answers with lower confidence.
-- OCR language: only English is installed locally for Tesseract; Hindi screenshots rely on Gemini vision. Install `tesseract-ocr-hin` to add Hindi OCR (the deployment image will include it).
-- The page inspector reads HTML text only and never runs scripts; phishing kits that hide from servers can look harmless.
-- Pages hosted on free platforms (github.io, pages.dev, blogspot, …) are never auto-trusted and are at least `SUSPICIOUS`.
-- A valid UPI QR is reported as a valid payment request; the payee's real identity cannot be verified, so the report shows payee and amount for the user to confirm and confidence is capped at 80 %.
-- Gemini free tier: the lighter model answers in ~1–2 s and is used first; the stronger one is the fallback. Without a key everything still works with built-in explanations.
+- Day-zero phishing on a clean-looking domain can still be missed.
+- Gemini free tier: ~2 s with the light model first, with timeouts; without it, new scam wording is caught less often.
+- VirusTotal free tier is 4 lookups/min (used only for unknown domains, cached).
+- Tesseract has English only locally; Hindi screenshots depend on Gemini vision.
+- A valid UPI QR is reported as a valid request; the payee's real identity can't be verified.
+- Free-hosting pages (github.io, pages.dev, …) are never auto-trusted and are at least *suspicious*.
 
-## Verification commands
+## Run the checks
 
 ```bash
-cd backend && uv run pytest -q                                  # 97 passed
-uv run python scripts/evaluate.py                               # static URL benchmark
-uv run python scripts/evaluate.py --live --split test           # live-feed URL benchmark (no links opened)
-uv run python scripts/eval_messages.py                          # template messages
-uv run python scripts/eval_messages.py --file messages_handwritten.csv
+cd backend && uv run pytest -q
+uv run python scripts/evaluate.py                              # static
+uv run python scripts/evaluate.py --full --blind --only phish  # new phishing, feeds off
+uv run python scripts/evaluate.py --full --only safe           # false alarms on live safe sites
+uv run python scripts/eval_messages.py --file messages_heldout.csv --llm
+uv run python scripts/measure_sandbox.py --n 120               # what page inspection sees
 cd ../frontend && npm test && npm run lint && npm run build
 ```
-
-## Changes from the original playbook
-
-- Everything is committed to `main` (as requested), with phase tags `v0.1-baseline` and `phase-0-done`.
-- Google Safe Browsing uses the v4 Lookup API; v5 only answers in a binary format.
-- The three benchmark sets are generated by scripts (`build_benchmark.py`, `gen_messages.py`) and committed as CSVs; raw feed downloads stay git-ignored.
-- Light mode was dropped; the UI is dark-only with verdict-tinted scenes.
-
-## Before the sponsor demo
-
-1. Run `start-local.bat`; try the built-in examples (fake KYC, genuine bank alert, dead link, courier scam).
-2. Test the camera scanner on a phone with `start-phone.bat` (Google Pay QR, Spotify QR, a QR to a fake link).
-3. Check the GitHub Actions result.
-4. Decide on deployment (Render + Vercel + uptime monitor); the Dockerfile and `render.yaml` are the next work item.

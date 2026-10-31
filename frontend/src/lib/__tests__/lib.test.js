@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createSseParser } from "../api";
 import { ageLabel, defang, shortUrl } from "../format";
-import { confidenceWord, getVerdict } from "../verdict";
+import { getVerdict } from "../verdict";
 
 describe("SSE parser", () => {
   it("parses events split across chunks and ignores heartbeats", () => {
@@ -30,24 +30,19 @@ describe("format helpers", () => {
     expect(shortUrl("https://a.com/" + "x".repeat(100), 30)).toHaveLength(30);
   });
   it("describes domain age", () => {
-    expect(ageLabel(0)).toBe("Registered today");
+    expect(ageLabel(0)).toBe("registered today");
     expect(ageLabel(400)).toContain("months");
-    expect(ageLabel(4000)).toBe("About 10 years old");
+    expect(ageLabel(4000)).toBe("10 years old");
     expect(ageLabel(null)).toBeNull();
   });
 });
 
-describe("verdict wording", () => {
+describe("verdict config", () => {
   it("falls back safely for unknown verdicts", () => {
-    expect(getVerdict("???").badge).toBe("Couldn't check");
-    expect(getVerdict("DANGEROUS").badge).toBe("Likely scam");
-  });
-  it("does not claim a site is safe when it is only unknown and clean", () => {
-    expect(getVerdict("SAFE", "verified").title).toBe("This looks safe");
-    expect(getVerdict("SAFE", "no_problems_found").title).toBe("We found no problems");
-  });
-  it("turns confidence into words", () => {
-    expect(confidenceWord(0.95)).toBe("Very sure");
-    expect(confidenceWord(0.5)).toBe("Not very sure");
+    expect(getVerdict("???").word).toBe("Unverified");
+    expect(getVerdict("DANGEROUS").word).toBe("Dangerous");
+    expect(getVerdict("SAFE", "verified").word).toBe("Safe");
+    expect(getVerdict("SAFE", "no_problems_found").word).toBe("Clear");
+    expect(getVerdict("SAFE", "valid_payment").headline).toContain("payment");
   });
 });

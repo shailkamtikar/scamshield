@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { Camera, CameraOff, Flashlight } from "lucide-react";
+import { Camera, CameraOff, Zap } from "lucide-react";
 import QrScannerLib from "qr-scanner";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -7,19 +7,19 @@ const IN_APP = /(FBAN|FBAV|Instagram|Line\/|MicroMessenger|Snapchat|LinkedInApp|
 
 function describeError(err) {
   const name = err?.name || String(err);
-  if (!window.isSecureContext) return "The camera only works on a secure (https) page. You can upload a picture of the QR code instead.";
-  if (IN_APP.test(navigator.userAgent)) return "This app's built-in browser blocks the camera. Open ScamShield in Chrome or Safari, or upload a picture of the QR code.";
-  if (/NotAllowed|Permission/i.test(name)) return "Camera permission was turned off. Allow the camera for this site in your browser settings, or upload a picture of the QR code.";
-  if (/NotFound|Overconstrained|No camera/i.test(name)) return "We couldn't find a camera on this device. You can upload a picture of the QR code instead.";
-  if (/NotReadable|Abort/i.test(name)) return "Another app is using the camera. Close it and try again.";
-  return "The camera couldn't start. You can upload a picture of the QR code instead.";
+  if (!window.isSecureContext) return "The camera only works on a secure (HTTPS) page. Open ScamShield over HTTPS, or upload a QR image instead.";
+  if (IN_APP.test(navigator.userAgent)) return "This in-app browser blocks the camera. Open ScamShield in Chrome or Safari, or upload a QR image instead.";
+  if (/NotAllowed|Permission/i.test(name)) return "Camera permission was denied. Allow camera access in your browser's site settings, then try again, or upload a QR image.";
+  if (/NotFound|Overconstrained|No camera/i.test(name)) return "No camera was found on this device. Upload a QR image instead.";
+  if (/NotReadable|Abort/i.test(name)) return "The camera is being used by another app. Close it and try again.";
+  return "The camera could not be started. You can upload a QR image instead.";
 }
 
 /**
- * Live QR scanner. The code is decoded ON THIS DEVICE; only its text is sent
- * for checking, and the link inside is never opened.
+ * Live QR scanner. The code is decoded ON THIS DEVICE; only the decoded text
+ * is sent to the engine, and the link inside is never opened.
  */
-export default function QrScanner({ onDecoded }) {
+export default function QrScanner({ onDecoded, onUnavailable }) {
   const video = useRef(null);
   const scanner = useRef(null);
   const [state, setState] = useState("idle"); // idle | starting | active | error
@@ -38,6 +38,7 @@ export default function QrScanner({ onDecoded }) {
     if (!navigator.mediaDevices?.getUserMedia || !window.isSecureContext) {
       setError(describeError(new Error("insecure")));
       setState("error");
+      onUnavailable?.();
       return;
     }
     setState("starting");
@@ -63,17 +64,13 @@ export default function QrScanner({ onDecoded }) {
       stop();
       setError(describeError(err));
       setState("error");
+      onUnavailable?.();
     }
-  }, [onDecoded, stop]);
+  }, [onDecoded, onUnavailable, stop]);
 
-  // The camera must never keep running in the background.
+  // Camera must never keep running in the background.
   useEffect(() => {
-    const onHide = () => {
-      if (document.hidden && scanner.current) {
-        stop();
-        setState("idle");
-      }
-    };
+    const onHide = () => document.hidden && scanner.current && (stop(), setState("idle"));
     document.addEventListener("visibilitychange", onHide);
     return () => {
       document.removeEventListener("visibilitychange", onHide);
@@ -89,37 +86,43 @@ export default function QrScanner({ onDecoded }) {
 
   return (
     <div>
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-line bg-sunken sm:aspect-[16/10]">
-        <video ref={video} playsInline muted className={`h-full w-full object-cover transition-opacity duration-500 ${state === "active" ? "opacity-100" : "opacity-0"}`} />
+      <div className="relative aspect-[4/3] w-full overflow-hidden border hairline bg-ink-3 sm:aspect-[16/10]">
+        <video ref={video} playsInline muted className={`h-full w-full object-cover ${state === "active" ? "opacity-100" : "opacity-0"} transition-opacity duration-500`} />
 
         <AnimatePresence>
           {state === "active" && (
             <motion.div className="pointer-events-none absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="absolute left-1/2 top-1/2 h-[60%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border-2 border-white/90 shadow-[0_0_0_2000px_rgba(0,0,0,0.35)]" style={{ aspectRatio: "1/1" }}>
-                <div className="absolute inset-x-0 h-1/6 bg-gradient-to-b from-transparent via-white/40 to-transparent" style={{ animation: "sweep 2.4s ease-in-out infinite" }} />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(5,7,13,0.75)_100%)]" />
+              <div className="absolute left-1/2 top-1/2 h-[58%] w-[58%] max-w-[300px] -translate-x-1/2 -translate-y-1/2" style={{ aspectRatio: "1/1" }}>
+                {[["top-0 left-0", "border-l-2 border-t-2"], ["top-0 right-0", "border-r-2 border-t-2"], ["bottom-0 left-0", "border-b-2 border-l-2"], ["bottom-0 right-0", "border-b-2 border-r-2"]].map(([pos, b]) => (
+                  <span key={pos} className={`absolute h-6 w-6 ${pos} ${b}`} style={{ borderColor: "rgb(var(--tint))" }} />
+                ))}
+                <div className="scanline absolute inset-x-0 h-10" style={{ animation: "scan-sweep 2.2s linear infinite" }} />
               </div>
-              <p className="absolute inset-x-0 bottom-3 text-center text-[14px] font-medium text-white">
-                {hint ? "Hold steady, and make sure the code is well lit" : "Point your camera at the QR code"}
-              </p>
+              <div className="label absolute inset-x-0 bottom-3 text-center !text-text">
+                {hint ? "Hold steady, fill the frame, add light" : "Point at a QR code"}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {state !== "active" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-            <span className={`mb-1 flex h-12 w-12 items-center justify-center rounded-full ${state === "error" ? "bg-[color:var(--unknown-soft)] text-soft" : "bg-brand-soft text-brand"}`}>
-              {state === "error" ? <CameraOff size={22} /> : <Camera size={23} />}
-            </span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+            {state === "error" ? <CameraOff size={32} strokeWidth={1.3} className="text-danger" /> : <Camera size={34} strokeWidth={1.3} className="tint-text" />}
             {state === "error" ? (
-              <p role="alert" className="max-w-[430px] text-[15px] text-soft">{error}</p>
+              <p role="alert" className="max-w-[420px] text-[13px] leading-relaxed text-muted">{error}</p>
             ) : (
               <>
-                <p className="font-medium">Scan with your camera</p>
-                <p className="max-w-[430px] text-[14px] text-soft">The code is read on your device, and the link inside is never opened on your phone.</p>
-                <button type="button" onClick={start} disabled={state === "starting"} className="btn-primary mt-3 !py-2.5">
-                  {state === "starting" ? "Starting the camera…" : "Turn on camera"}
-                </button>
+                <div className="display text-[26px]">Scan with camera</div>
+                <p className="max-w-[420px] text-[13px] leading-relaxed text-muted">
+                  The code is read on your device. Only its text is sent for checking, and the link is <b className="text-text">never opened</b>.
+                </p>
               </>
+            )}
+            {state !== "error" && (
+              <button type="button" onClick={start} disabled={state === "starting"} className="inline-flex items-center gap-2 border border-[rgb(var(--tint))] px-5 py-2.5 text-[13px] font-medium tint-text transition-colors hover:bg-[rgba(var(--tint),0.12)] disabled:opacity-50">
+                {state === "starting" ? "Starting camera…" : "Allow camera & scan"}
+              </button>
             )}
           </div>
         )}
@@ -127,15 +130,14 @@ export default function QrScanner({ onDecoded }) {
 
       {state === "active" && (
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={() => { stop(); setState("idle"); }} className="btn-quiet !px-3 !py-1.5 !text-[14px]">Stop camera</button>
+          <button type="button" onClick={() => { stop(); setState("idle"); }} className="border hairline px-3 py-1.5 text-[12px] text-muted transition-colors hover:text-text">Stop camera</button>
           {flash.available && (
             <button
               type="button"
               onClick={async () => { await scanner.current?.toggleFlash(); setFlash((f) => ({ ...f, on: !f.on })); }}
-              className="btn-quiet !px-3 !py-1.5 !text-[14px]"
-              aria-pressed={flash.on}
+              className={`inline-flex items-center gap-1.5 border px-3 py-1.5 text-[12px] ${flash.on ? "tint-border tint-text" : "hairline text-muted"}`}
             >
-              <Flashlight size={15} /> {flash.on ? "Torch off" : "Torch on"}
+              <Zap size={13} /> Torch
             </button>
           )}
         </div>

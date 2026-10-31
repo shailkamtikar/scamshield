@@ -1,56 +1,62 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Check } from "lucide-react";
-
-const EASE = [0.22, 1, 0.36, 1];
+import { MODE_CONFIG } from "../lib/modes";
 
 function Spinner() {
   return (
-    <span className="relative inline-flex h-5 w-5">
-      <span className="absolute inset-0 rounded-full border-2 border-line" />
-      <motion.span className="absolute inset-0 rounded-full border-2 border-transparent border-t-brand" animate={{ rotate: 360 }} transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }} />
+    <span className="relative inline-flex h-4 w-4">
+      <span className="absolute inset-0 rounded-full border border-[rgba(var(--tint),0.25)]" />
+      <motion.span className="absolute inset-0 rounded-full border-2 border-transparent border-t-[rgb(var(--tint))]" animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} />
     </span>
   );
 }
 
-export default function ScanTimeline({ stages, onCancel }) {
+export default function ScanTimeline({ mode, stages, partialUrls, onCancel }) {
   const done = stages.filter((s) => s.status === "done").length;
-  const total = Math.max(stages.some((s) => s.id === "read" || s.id === "decode") ? 6 : 5, stages.length);
   return (
-    <motion.section className="mx-auto w-full max-w-[640px] pt-8 sm:pt-14" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: EASE }} aria-live="polite">
-      <h2 className="text-[30px] sm:text-[36px]">Checking this for you…</h2>
-      <p className="mt-2 text-soft">This usually takes a few seconds. A careful look at an unknown site can take up to half a minute.</p>
+    <motion.section className="mx-auto w-full max-w-[860px] pt-6 sm:pt-12" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} aria-live="polite">
+      <div className="label mb-3 flex items-center gap-3"><span className="inline-block h-px w-8 bg-[rgb(var(--tint))]" />Scanning · {MODE_CONFIG[mode].label}</div>
+      <h2 className="display text-[clamp(2.6rem,9vw,6.5rem)]">Investigating<span className="tint-text">.</span></h2>
 
-      <div className="card mt-6 overflow-hidden">
-        <div className="h-1 bg-sunken">
-          <motion.div className="h-full bg-brand" animate={{ width: `${Math.min(100, (done / total) * 100 + 6)}%` }} transition={{ duration: 0.7, ease: EASE }} />
+      <div className="mt-8 border hairline bg-ink-2/70 p-1">
+        <div className="relative h-[3px] overflow-hidden bg-line">
+          <motion.div className="absolute inset-y-0 left-0 bg-[rgb(var(--tint))]" animate={{ width: `${Math.min(100, (done / 5) * 100 + 8)}%` }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} />
         </div>
         <ol className="divide-y divide-line">
           <AnimatePresence initial={false}>
             {stages.map((s) => (
-              <motion.li key={s.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE }} className="flex items-start gap-3.5 px-5 py-3.5">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+              <motion.li key={s.id} layout initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex items-start gap-4 px-5 py-4">
+                <span className="mt-0.5 flex h-5 w-5 items-center justify-center">
                   {s.status === "done" ? (
-                    <motion.span initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 420, damping: 22 }} className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-on-brand">
-                      <Check size={13} strokeWidth={3} />
-                    </motion.span>
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }} className="flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--tint))] text-ink"><Check size={12} strokeWidth={3} /></motion.span>
+                  ) : s.status === "failed" ? (
+                    <span className="h-2 w-2 rounded-full bg-danger" />
                   ) : (
                     <Spinner />
                   )}
                 </span>
-                <div className="min-w-0">
-                  <p className={s.status === "done" ? "text-soft" : "font-medium"}>{s.label}</p>
-                  {s.detail && <p className="truncate text-[14px] text-faint">{s.detail}</p>}
+                <div className="min-w-0 flex-1">
+                  <div className={`text-[14px] ${s.status === "done" ? "text-muted" : "text-text"}`}>{s.label}</div>
+                  {s.detail && <div className="mt-0.5 truncate font-mono text-[11px] text-faint">{s.detail}</div>}
                 </div>
               </motion.li>
             ))}
           </AnimatePresence>
           {stages.length === 0 && (
-            <li className="flex items-center gap-3.5 px-5 py-3.5"><Spinner /><span className="text-soft">Getting started…</span></li>
+            <li className="flex items-center gap-4 px-5 py-4"><Spinner /><span className="text-[14px] text-muted">Waking the engine…</span></li>
           )}
         </ol>
       </div>
 
-      <button type="button" onClick={onCancel} className="btn-quiet mt-5 !px-4 !py-2">Cancel</button>
+      {partialUrls.length > 0 && (
+        <motion.div className="mt-4 flex flex-wrap gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          {partialUrls.map((u) => (
+            <span key={u.url} className="border hairline px-3 py-1.5 font-mono text-[11px] text-muted">{u.registrable} <b style={{ color: `var(--color-${u.verdict === "SAFE" ? "safe" : u.verdict === "DANGEROUS" ? "danger" : u.verdict === "SUSPICIOUS" ? "warn" : "unknown"})` }}>{u.verdict.replaceAll("_", " ")}</b></span>
+          ))}
+        </motion.div>
+      )}
+
+      <button type="button" onClick={onCancel} className="mt-6 border hairline px-4 py-2 text-[12px] text-muted transition-colors hover:text-text">Cancel</button>
     </motion.section>
   );
 }
