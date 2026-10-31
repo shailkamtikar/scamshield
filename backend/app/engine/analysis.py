@@ -99,6 +99,9 @@ def step_decide(case: Case) -> Case:
     elif "ARREST_THREAT" in ids and ids & {"FEAR_OR_THREAT", "PHONE_CALL_TO_ACTION", "URGENCY", "FINANCIAL_PRESSURE"}:
         msg_verdict = "DANGEROUS"
         path.append("M3_ARREST_THREAT")
+    elif ids & V.FAKE_IDS:
+        msg_verdict = "DANGEROUS"
+        path.append("M7_IMPERSONATION_SIGNAL")
     elif ids & {"UPI_COLLECT_SCAM", "REMOTE_ACCESS_APP"}:
         msg_verdict = "DANGEROUS"
         path.append("M4_COLLECT_OR_REMOTE_ACCESS")
@@ -146,6 +149,13 @@ def step_decide(case: Case) -> Case:
 
     score = None if verdict == "COULD_NOT_VERIFY" else V.clamp_to_band(verdict, int(score_raw))
 
+    # QR codes that lead to a verified official service
+    if case.kind == "qr" and reports and reports[0].trust["tier"] == "OFFICIAL" and verdict == "SAFE":
+        t = reports[0].trust
+        msg_signals.append(make("VERIFIED_SERVICE", f"The QR points to {t['brand']} (verified official domain).", "qr"))
+        if isinstance(case.extra.get("qr"), dict):
+            case.extra["qr"]["service"] = {"name": t["brand"], "category": t["category"], "verified": True}
+
     # signals used for explanation and confidence
     all_signals = list(msg_signals)
     for r in reports:
@@ -157,9 +167,15 @@ def step_decide(case: Case) -> Case:
     if deciding is not None:
         checks.update(deciding.checks)
         tier = deciding.trust["tier"]
+    elif case.kind == "qr":
+        checks["qr_payload"] = "done"
     confidence, factors = V.confidence_for(verdict, case.signals, checks, tier)
-    if verdict == "SAFE" and not reports and not any(s.polarity == "trust" for s in case.signals):
+    if any(s.id == "UPI_VALID" for s in case.signals):
+        # the format is valid but the payee's real identity cannot be verified here
         confidence = min(confidence, 0.8)
+    if not reports:
+        # wording-only judgement (no link evidence) is never near-certain
+        confidence = min(confidence, 0.8 if verdict == "SAFE" and not any(s.polarity == "trust" for s in case.signals) else 0.9)
 
     # score breakdown (risk contributions, largest first; trust shown as negatives)
     contrib: dict[str, int] = {}

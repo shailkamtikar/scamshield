@@ -1,30 +1,60 @@
-from app.graph.nodes.gemini_reasoning import gemini_reasoning_node
-from langgraph.graph import StateGraph, START, END
-from app.graph.state import ScamShieldState
-from app.graph.nodes.extraction import extraction_node
-from app.graph.nodes.url_investigation import url_investigation_node
-from app.graph.nodes.identity_verification import identity_verification_node
-from app.graph.nodes.social_engineering import social_engineering_node
-from app.graph.nodes.risk_assessment import risk_assessment_node
+"""
+ScamShield investigation graph (LangGraph).
+
+    extract -> message -> urls -> decide -> explain
+
+Every node receives and returns the shared `Case`. Because each node is one
+stage, `graph.stream(...)` yields real progress events for the UI.
+"""
+
+from typing import TypedDict
+
+from langgraph.graph import END, START, StateGraph
+
+from app.engine import analysis, explain
 
 
-builder = StateGraph(ScamShieldState)
-builder.add_node("gemini_reasoning", gemini_reasoning_node)
-builder.add_node("extraction", extraction_node)
-builder.add_node("url_investigation", url_investigation_node)
-builder.add_node("identity_verification", identity_verification_node)
-builder.add_node("social_engineering", social_engineering_node)
-builder.add_node("risk_assessment", risk_assessment_node)
+class GraphState(TypedDict):
+    case: analysis.Case
 
-builder.add_edge(START, "extraction")
-builder.add_edge("extraction", "url_investigation")
-builder.add_edge("url_investigation", "identity_verification")
-builder.add_edge("identity_verification", "social_engineering")
-# Deterministic scoring runs BEFORE Gemini so the reasoning layer can see
-# the authoritative risk_score/score_breakdown and explain it, rather than
-# the two being computed independently and potentially disagreeing.
-builder.add_edge("social_engineering", "risk_assessment")
-builder.add_edge("risk_assessment", "gemini_reasoning")
-builder.add_edge("gemini_reasoning", END)
+
+def _wrap(fn):
+    def node(state: GraphState) -> GraphState:
+        return {"case": fn(state["case"])}
+    return node
+
+
+builder = StateGraph(GraphState)
+builder.add_node("extract", _wrap(analysis.step_extract))
+builder.add_node("message", _wrap(analysis.step_message))
+builder.add_node("urls", _wrap(analysis.step_urls))
+builder.add_node("decide", _wrap(analysis.step_decide))
+builder.add_node("explain", _wrap(explain.explain))
+
+builder.add_edge(START, "extract")
+builder.add_edge("extract", "message")
+builder.add_edge("message", "urls")
+builder.add_edge("urls", "decide")
+builder.add_edge("decide", "explain")
+builder.add_edge("explain", END)
 
 graph = builder.compile()
+
+STAGE_LABELS = {
+    "extract": "Finding links and details in the content",
+    "message": "Reading the wording for scam tactics",
+    "urls": "Checking every link: structure, reputation, redirects, domain age",
+    "decide": "Combining the evidence into a verdict",
+    "explain": "Writing the explanation",
+}
+
+
+def run(case: analysis.Case) -> analysis.Case:
+    return graph.invoke({"case": case})["case"]
+
+
+def stream(case: analysis.Case):
+    """Yield (node_name, case) after each stage completes."""
+    for update in graph.stream({"case": case}, stream_mode="updates"):
+        for name, value in update.items():
+            yield name, value["case"]

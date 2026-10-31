@@ -1,19 +1,27 @@
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 
-from app.api._shared import run_investigation
+from app.api._shared import run_investigation, stream_case
+from app.engine.analysis import Case
 from app.models.investigation import InvestigationRequest
-from app.graph.state import ScamShieldState
-
 
 router = APIRouter()
 
 
-@router.post("/investigate")
-def investigate(request: InvestigationRequest):
-    state = ScamShieldState(
+def _case(request: InvestigationRequest) -> Case:
+    return Case(
         message=request.message,
-        source=request.source,
         claimed_organization=request.claimed_organization,
+        source=request.source,
+        kind="text",
     )
 
-    return run_investigation(state)
+
+@router.post("/investigate")
+def investigate(request: InvestigationRequest):
+    return run_investigation(_case(request))
+
+
+@router.post("/investigate/stream")
+def investigate_stream(request: InvestigationRequest):
+    return StreamingResponse(stream_case(lambda: _case(request)), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

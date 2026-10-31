@@ -1,17 +1,65 @@
-import tempfile
-from pathlib import Path
-
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import StreamingResponse
 
-from app.api._shared import run_investigation
-from app.graph.state import ScamShieldState
-from app.services.ocr import OcrUnavailable, extract_text_from_image
-
+from app.api._shared import run_investigation, stream_case
+from app.api.uploads import read_image
+from app.engine.analysis import Case
+from app.engine.signals import make
+from app.intel.urls import extract_urls
+from app.services import ocr, vision
 
 router = APIRouter()
 
-ALLOWED_CONTENT_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/webp"}
-MAX_UPLOAD_BYTES = 8 * 1024 * 1024  # 8 MB
+
+def build_case(data: bytes, mime: str, claimed: str | None, source: str) -> Case:
+    """Screenshot -> OCR (+ Gemini vision cross-check) -> the normal pipeline."""
+
+    try:
+        ocr_result = ocr.extract_text(data)
+    except ocr.OcrUnavailable as err:
+        raise HTTPException(status_code=503, detail=str(err)) from err
+    read = vision.read_image(data, mime)
+
+    text = ocr_result.text
+    sender = ""
+    extra_signals = []
+    method = "ocr"
+    if read and read.readable and read.text.strip():
+        sender = read.sender.strip()
+        ocr_urls = {u.key for u in extract_urls(ocr.repair_url_text(ocr_result.text))}
+        vis_urls = extract_urls(read.text)
+        if ocr_result.confidence < 65 or ocr_result.words < 6:
+            text, method = read.text, "vision"
+        else:
+            method = "ocr+vision"
+            missing = [u.url for u in vis_urls if u.key not in ocr_urls]
+            if missing:
+                text = text + "\n" + "\n".join(missing)
+        if ocr_urls and {u.key for u in vis_urls} and ocr_urls != {u.key for u in vis_urls}:
+            extra_signals.append(make("OCR_VISION_MISMATCH", "Two independent readers disagreed about a link in the screenshot; both were checked.", "image"))
+    text = ocr.repair_url_text(text)
+
+    if len(text.strip()) < 3:
+        raise HTTPException(status_code=422, detail="No readable text was found in this image. Try a sharper, uncropped screenshot.")
+
+    return Case(
+        message=text,
+        claimed_organization=claimed,
+        source=sender or source,
+        kind="image",
+        extra_signals=extra_signals,
+        extra={
+            "extracted_text": text,
+            "extraction": {
+                "method": method,
+                "ocr_confidence": round(ocr_result.confidence, 1),
+                "ocr_words": ocr_result.words,
+                "sender": sender or None,
+                "vision_used": read is not None,
+            },
+        },
+    )
 
 
 @router.post("/investigate/image")
@@ -20,55 +68,18 @@ async def investigate_image(
     claimed_organization: str | None = Form(None),
     source: str = Form("sms_image"),
 ):
-    """
-    SMS screenshot -> temporary local file -> existing Tesseract OCR
-    service (services/ocr.py, unmodified) -> the extracted text is fed
-    into the SAME ScamShieldState.message field a normal text submission
-    uses, so it goes through the full existing investigation pipeline
-    (extraction, URL, identity, social-engineering, Gemini reasoning)
-    instead of only being appended as a late piece of evidence.
-    """
+    data, mime = await read_image(file)
+    return await run_in_threadpool(lambda: run_investigation(build_case(data, mime, claimed_organization, source)))
 
-    if file.content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=415,
-            detail="Unsupported image type. Upload a PNG, JPEG, or WEBP screenshot.",
-        )
 
-    contents = await file.read()
-
-    if not contents:
-        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
-
-    if len(contents) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="Image is too large (max 8 MB).")
-
-    suffix = Path(file.filename or "screenshot.png").suffix or ".png"
-
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        tmp.write(contents)
-        tmp_path = tmp.name
-
-    try:
-        extracted_text = extract_text_from_image(tmp_path)
-    except OcrUnavailable as err:
-        raise HTTPException(status_code=503, detail=str(err)) from err
-    finally:
-        Path(tmp_path).unlink(missing_ok=True)
-
-    initial_evidence = []
-    if not extracted_text:
-        initial_evidence.append(
-            "No readable text was extracted from the uploaded image via OCR."
-        )
-
-    state = ScamShieldState(
-        message=extracted_text,
-        source=source,
-        claimed_organization=claimed_organization,
-        evidence=initial_evidence,
+@router.post("/investigate/image/stream")
+async def investigate_image_stream(
+    file: UploadFile = File(...),
+    claimed_organization: str | None = Form(None),
+    source: str = Form("sms_image"),
+):
+    data, mime = await read_image(file)
+    return StreamingResponse(
+        stream_case(lambda: build_case(data, mime, claimed_organization, source), ("read", "Reading the screenshot (OCR + visual check)")),
+        media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
-
-    result = run_investigation(state)
-    result["extracted_text"] = extracted_text
-    return result
