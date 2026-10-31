@@ -32,6 +32,9 @@ Without this key ScamShield can only reuse earlier public scans of a site. With 
 3. Put it in `backend/.env` as `URLSCAN_API_KEY=...`.
 ScamShield submits scans as "unlisted" so links with personal tokens are not shown publicly.
 
+## Chat assistant (second Gemini key)
+The scam assistant uses its own key so chatting never uses the checker's quota. Create another key at https://aistudio.google.com/app/apikey (use a different Google project from the first key if you want a separate quota) and put it in `backend/.env` as `GEMINI_CHAT_API_KEY=...`. Without it the chat button is hidden.
+
 ## Gate C - before Milestone 9.1: hosting accounts
 1. **Render** (https://render.com): sign up with your GitHub account, free tier only. Authorise access to `shailkamtikar/scamshield`.
 2. **Vercel** (https://vercel.com): sign up with GitHub, import the repo, root directory `frontend`.

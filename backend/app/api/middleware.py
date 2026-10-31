@@ -73,7 +73,7 @@ class ProtectMiddleware:
         started = time.time()
         path = scope.get("path", "")
         status = {"code": 0}
-        is_analysis = scope.get("method") == "POST" and path.startswith("/investigate")
+        is_analysis = scope.get("method") == "POST" and path.startswith(("/investigate", "/chat"))
 
         async def respond(code: int, detail: str, extra: list | None = None):
             status["code"] = code

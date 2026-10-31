@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import AmbientBackground from "./components/AmbientBackground";
 import AnalyzeForm from "./components/AnalyzeForm";
+import ChatWidget from "./components/ChatWidget";
 import Hero from "./components/Hero";
 import Result from "./components/Result";
 import ScanTimeline from "./components/ScanTimeline";
@@ -108,6 +109,7 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
+      {health?.providers?.chat && <ChatWidget result={inv.phase === "result" ? inv.meta?.result : null} />}
       <Footer />
     </div>
   );

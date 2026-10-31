@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createSseParser } from "../api";
 import { ageLabel, defang, shortUrl } from "../format";
+import { summariseResult } from "../chat";
 import { getVerdict } from "../verdict";
 
 describe("SSE parser", () => {
@@ -44,5 +45,18 @@ describe("verdict config", () => {
     expect(getVerdict("SAFE", "verified").word).toBe("Safe");
     expect(getVerdict("SAFE", "no_problems_found").word).toBe("Clear");
     expect(getVerdict("SAFE", "valid_payment").headline).toContain("payment");
+  });
+});
+
+describe("assistant context", () => {
+  it("summarises a result with defanged links and no raw content", () => {
+    const text = summariseResult({
+      verdict: "DANGEROUS", assurance: null, risk_score: 90, confidence: 0.9, recommendation: "Do not open it.",
+      reasons: ["Lookalike domain"], urls: [{ url: "http://evil.top/login", verdict: "DANGEROUS", trust: { tier: "UNKNOWN" }, domain_age_days: 3 }],
+    });
+    expect(text).toContain("Dangerous");
+    expect(text).toContain("hxxp://evil[.]top/login");
+    expect(text).not.toContain("http://evil.top");
+    expect(summariseResult(null)).toBeNull();
   });
 });

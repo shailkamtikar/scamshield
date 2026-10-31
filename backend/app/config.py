@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     virustotal_api_key: str | None = None
     urlhaus_auth_key: str | None = None
     urlscan_api_key: str | None = None
+    # Separate key for the chat assistant so chatting never uses the checker's quota.
+    gemini_chat_api_key: str | None = None
     api_access_key: str | None = None
 
     # Feature switches (all default on).
@@ -70,7 +72,7 @@ class Settings(BaseSettings):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
-    @field_validator("tesseract_cmd", "gemini_api_key", mode="before")
+    @field_validator("tesseract_cmd", "gemini_api_key", "gemini_chat_api_key", mode="before")
     @classmethod
     def _blank_to_none(cls, value):
         return value or None
@@ -82,6 +84,7 @@ class Settings(BaseSettings):
             "virustotal": bool(self.virustotal_api_key),
             "urlhaus": bool(self.urlhaus_auth_key),
             "sandbox_live_scan": bool(self.urlscan_api_key),
+            "chat": bool(self.gemini_chat_api_key),
             "tesseract": bool(self.tesseract_cmd),
         }
 

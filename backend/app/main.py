@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.chat import router as chat_router
 from app.api.investigate import router as investigate_router
 from app.api.middleware import ProtectMiddleware
 from app.api.investigate_image import router as investigate_image_router
@@ -37,6 +38,7 @@ app.add_middleware(
 )
 
 app.include_router(investigate_router)
+app.include_router(chat_router)
 app.include_router(investigate_image_router)
 app.include_router(investigate_qr_router)
 
