@@ -69,6 +69,16 @@ def main():
     print("  " + " " * 22 + " ".join(c[:9].ljust(9) for c in cats))
     for e in cats:
         print("  " + e.ljust(22) + " ".join(str(confusion.get((e, c), 0)).ljust(9) for c in cats))
+    print("per category (a prediction counts as right if it is any accepted label):")
+    for cat in cats:
+        tp_c = sum(v for (e, g), v in confusion.items() if g == cat and e == cat)
+        pred = sum(v for (e, g), v in confusion.items() if g == cat)
+        true = sum(v for (e, g), v in confusion.items() if e == cat)
+        if not true and not pred:
+            continue
+        p_ = tp_c / pred if pred else 0.0
+        r_ = tp_c / true if true else 0.0
+        print(f"  {cat:24} n={true:<3} precision {p_:.0%}  recall {r_:.0%}  F1 {(2 * p_ * r_ / (p_ + r_)) if p_ + r_ else 0:.0%}")
     print(f"latency per message: median {sorted(times)[len(times) // 2] * 1000:.1f} ms, max {max(times) * 1000:.1f} ms; peak python memory {peak:.0f} MB")
 
 

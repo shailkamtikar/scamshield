@@ -273,8 +273,8 @@ PROMO_CUES = [
 
 PHONE_RE = re.compile(r"(?<!\d)(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}(?!\d)")
 TOLLFREE_RE = re.compile(r"(?<!\d)(?:1-?800|1860)[\s-]?\d{3,4}(?:[\s-]?\d{3,4})?(?!\d)")
-EMAIL_RE = re.compile(r"[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}", re.I)
-UPI_RE = re.compile(r"(?<![\w.])([a-z0-9._-]{2,}@(" + "|".join(sorted(UPI_HANDLES, key=len, reverse=True)) + r"))(?![\w.])", re.I)
+EMAIL_RE = re.compile(r"(?<![a-z0-9._%+-])[a-z0-9._%+-]{1,64}@[a-z0-9.-]{1,255}\.[a-z]{2,}", re.I)  # anchored and bounded: no quadratic scan on long runs
+UPI_RE = re.compile(r"(?<![\w.-])([a-z0-9._-]{2,64}@(" + "|".join(sorted(UPI_HANDLES, key=len, reverse=True)) + r"))(?![\w.])", re.I)
 IFSC_RE = re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b")
 
 
@@ -300,7 +300,7 @@ def mentioned_brands(text: str, extra: tuple[str, ...] = ()):
     for token, brand in brand_tokens().items():
         if len(token) < 3 or token in GENERIC_BRAND_WORDS:
             continue
-        if re.search(r"\b{re.escape(token)}\b", low) and brand.name not in seen:
+        if re.search(rf"\b{re.escape(token)}\b", low) and brand.name not in seen:
             seen.add(brand.name)
             found.append(brand)
     # also the brand's full name written with spaces, e.g. "ICICI Bank"

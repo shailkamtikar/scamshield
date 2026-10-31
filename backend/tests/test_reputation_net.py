@@ -71,26 +71,26 @@ def test_unusual_ports_and_schemes_blocked():
 
 @respx.mock
 def test_redirect_to_private_address_is_blocked(monkeypatch):
-    monkeypatch.setattr(net, "resolve_public", lambda host: (_ for _ in ()).throw(net.BlockedHost("private")) if host == "internal.test" else ["93.184.216.34"])
-    respx.get("http://public.test/").mock(return_value=httpx.Response(302, headers={"location": "http://internal.test/"}))
+    monkeypatch.setattr(net, "resolve_public", lambda host: (_ for _ in ()).throw(net.BlockedHost("private")) if host == "internal.test" else ["93.184.216.3"])
+    respx.get("http://93.184.216.3/").mock(return_value=httpx.Response(302, headers={"location": "http://internal.test/"}))
     result = net.fetch("http://public.test/")
     assert result.outcome == "BLOCKED" and result.chain == ["http://public.test/", "http://internal.test/"]
 
 
 @respx.mock
 def test_redirect_chain_and_dead_link(monkeypatch):
-    monkeypatch.setattr(net, "resolve_public", lambda host: ["93.184.216.34"])
-    respx.get("http://a.test/").mock(return_value=httpx.Response(301, headers={"location": "http://b.test/"}))
-    respx.get("http://b.test/").mock(return_value=httpx.Response(404))
+    monkeypatch.setattr(net, "resolve_public", lambda host: {"a.test": ["93.184.216.1"], "b.test": ["93.184.216.2"], "public.test": ["93.184.216.3"]}.get(host, ["93.184.216.4"]))
+    respx.get("http://93.184.216.1/").mock(return_value=httpx.Response(301, headers={"location": "http://b.test/"}))
+    respx.get("http://93.184.216.2/").mock(return_value=httpx.Response(404))
     result = net.fetch("http://a.test/")
     assert result.outcome == "NOT_FOUND" and len(result.chain) == 2
 
 
 @respx.mock
 def test_redirect_loop(monkeypatch):
-    monkeypatch.setattr(net, "resolve_public", lambda host: ["93.184.216.34"])
-    respx.get("http://a.test/").mock(return_value=httpx.Response(302, headers={"location": "http://b.test/"}))
-    respx.get("http://b.test/").mock(return_value=httpx.Response(302, headers={"location": "http://a.test/"}))
+    monkeypatch.setattr(net, "resolve_public", lambda host: {"a.test": ["93.184.216.1"], "b.test": ["93.184.216.2"], "public.test": ["93.184.216.3"]}.get(host, ["93.184.216.4"]))
+    respx.get("http://93.184.216.1/").mock(return_value=httpx.Response(302, headers={"location": "http://b.test/"}))
+    respx.get("http://93.184.216.2/").mock(return_value=httpx.Response(302, headers={"location": "http://a.test/"}))
     assert net.fetch("http://a.test/").outcome == "LOOP"
 
 
@@ -120,3 +120,12 @@ def test_harmless_page_has_no_signals_and_scripts_are_not_run():
 
     html = "<html><title>Rahul's pottery</title><script>document.location='http://evil'</script><p>Handmade pots</p></html>"
     assert page.analyze(parse_url("https://rahulpottery.in/"), html) == []
+
+
+@respx.mock
+def test_request_goes_to_the_validated_address_with_the_real_name_in_the_host_header(monkeypatch):
+    """DNS rebinding: the second DNS answer must never be used, so the connection targets the IP we checked."""
+    monkeypatch.setattr(net, "resolve_public", lambda host: ["93.184.216.9"])
+    route = respx.get("http://93.184.216.9/page").mock(return_value=httpx.Response(200, text="ok", headers={"content-type": "text/plain"}))
+    assert net.fetch("http://site.test/page").outcome == "OK"
+    assert route.calls.last.request.headers["host"] == "site.test"

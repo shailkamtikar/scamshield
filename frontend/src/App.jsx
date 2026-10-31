@@ -58,7 +58,8 @@ export default function App() {
 
   const finished = inv.phase === "result" ? inv.meta?.result : undefined;
   const isPromo = finished?.verdict === "SAFE" && String(finished.assurance || "").startsWith("promotion");
-  const verdict = isPromo ? "PROMO" : inv.phase === "result" ? finished?.verdict : inv.phase === "scanning" ? inv.preview?.verdict : undefined;
+  const isSpam = finished?.verdict === "SAFE" && finished.assurance === "spam";
+  const verdict = isSpam ? "SPAM" : isPromo ? "PROMO" : inv.phase === "result" ? finished?.verdict : inv.phase === "scanning" ? inv.preview?.verdict : undefined;
   useEffect(() => {
     if (verdict) document.documentElement.dataset.verdict = verdict;
     else delete document.documentElement.dataset.verdict;

@@ -2,6 +2,8 @@
 
 Local build (phases 0–8). Deployment is not done yet.
 
+> The latest audit (categories, e-mail headers, red-team sets, security fixes, readiness scores) is in [AUDIT.md](AUDIT.md).
+
 ## What was verified
 
 | Area | State | Evidence |

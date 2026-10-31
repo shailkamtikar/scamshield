@@ -89,3 +89,5 @@ def classify(result: dict, mentioned_brand: bool = False) -> dict:
 
 def apply(result: dict, mentioned_brand: bool = False) -> None:
     result.update(classify(result, mentioned_brand))
+    if result["category"] == "SPAM":
+        result["assurance"] = "spam"  # the screen shows spam in grey, apart from genuine promotions (blue)

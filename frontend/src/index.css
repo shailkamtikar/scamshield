@@ -33,6 +33,7 @@
 :root[data-verdict="DANGEROUS"] { --tint: 255, 77, 94; }
 :root[data-verdict="COULD_NOT_VERIFY"] { --tint: 138, 148, 166; }
 :root[data-verdict="PROMO"] { --tint: 106, 168, 255; }
+:root[data-verdict="SPAM"] { --tint: 138, 148, 166; }
 
 html, body, #root { min-height: 100%; }
 body {

@@ -94,7 +94,7 @@ def fetch(url: str, want_body: bool = False, timeout: float = 4.0) -> FetchResul
             if parts.scheme not in {"http", "https"} or port not in ALLOWED_PORTS:
                 return FetchResult("BLOCKED", current, chain=chain, detail="unsupported scheme or port")
             try:
-                resolve_public(host)
+                addresses = resolve_public(host)
             except BlockedHost as err:
                 return FetchResult("BLOCKED", current, chain=chain, detail=str(err))
             except socket.gaierror:
@@ -103,7 +103,13 @@ def fetch(url: str, want_body: bool = False, timeout: float = 4.0) -> FetchResul
                 return FetchResult("ERROR", current, chain=chain, detail=str(err))
 
             try:
-                with client.stream("GET", current) as response:
+                # Connect to the address we just validated, not to a second DNS answer (DNS rebinding): the name is
+                # kept in the Host header and in TLS (SNI + certificate check) so the site still sees its own name.
+                ip = addresses[0]
+                ip_host = f"[{ip}]" if ":" in ip else ip
+                pinned = parts._replace(netloc=f"{ip_host}:{parts.port}" if parts.port else ip_host).geturl()
+                host_header = f"{host}:{parts.port}" if parts.port else host
+                with client.stream("GET", pinned, headers={"Host": host_header}, extensions={"sni_hostname": host}) as response:
                     status = response.status_code
                     ctype = response.headers.get("content-type", "")
                     if status in {301, 302, 303, 307, 308} and response.headers.get("location"):

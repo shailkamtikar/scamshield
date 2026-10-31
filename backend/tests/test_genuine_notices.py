@@ -30,13 +30,14 @@ def test_promotions_are_never_flagged_and_mostly_recognised():
     promos = [r for r in ROWS if r["label"] == "promo"]
     results = [run(r["text"]) for r in promos]
     assert all(r["verdict"] == "SAFE" for r in results)
-    recognised = sum(1 for r in results if str(r["assurance"]).startswith("promotion"))
+    recognised = sum(1 for r in results if r["category"] in {"SAFE_PROMOTIONAL", "SPAM"})
     assert recognised / len(promos) >= 0.85
+    assert sum(1 for r in results if r["category"] == "SAFE_PROMOTIONAL") / len(promos) >= 0.5  # promotions from a named organisation are not called spam
 
 
 def test_promotion_with_unknown_link_says_destination_is_unverified():
     r = run("Mega sale! Flat 50% off on all shoes. Shop now at https://bit.ly/3xYz9aB. T&C apply.")
-    assert r["verdict"] == "SAFE" and r["assurance"] == "promotion_unverified"
+    assert r["verdict"] == "SAFE" and r["assurance"] == "spam" and r["category"] == "SPAM" and r["action"] == "SPAM"
 
 
 def test_promotion_on_official_site_is_marked_promotion():
@@ -91,3 +92,13 @@ def test_download_app_from_play_store_is_not_an_apk_install():
     r = run("Download the app from the Play Store to track your order.")
     assert "APK_INSTALL" not in {s["id"] for s in r["message_signals"]}
     assert "APK_INSTALL" in {s["id"] for s in run("Download the app from this link to claim your refund: http://x.top/a.apk")["message_signals"]}
+
+
+def test_long_pathological_input_is_analysed_quickly():
+    """A 40,000-character run of one symbol used to take 7 s (quadratic regular expressions): a cheap way to tie up the server."""
+    import time
+
+    for text in ("-" * 40000, "1" * 40000, "a@" * 20000, ".-" * 20000):
+        started = time.time()
+        run(text)
+        assert time.time() - started < 3

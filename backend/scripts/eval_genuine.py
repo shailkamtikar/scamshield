@@ -36,7 +36,7 @@ def main():
             nonzero.append((res["risk_score"], r["text"][:100]))
         else:
             per[r["category"]][0] += 1
-        if r["label"] == "promo" and res.get("assurance") not in {"promotion", "promotion_unverified"}:
+        if r["label"] == "promo" and res.get("assurance") not in {"promotion", "promotion_unverified", "spam"}:
             wrong_promo.append((res["verdict"], res.get("assurance"), res.get("message_type"), r["text"][:90]))
     print(f"genuine messages {n['genuine']}, promotions {n['promo']}")
     print(f"flagged as SUSPICIOUS/DANGEROUS: {len(flagged)}/{len(rows)}")

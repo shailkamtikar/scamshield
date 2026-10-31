@@ -27,6 +27,7 @@ OPEN_LINK_SERVICES = {"t.me", "telegram.me", "wa.me", "discord.gg", "forms.gle",
 
 PROMO_ADVICE = {
     "promotion": "This reads like an advertisement and the link goes to the organisation's own site. Reading it is harmless; offers can still end, so check the details in the official app or website.",
+    "spam": "This reads like an unwanted advertisement. Reading it is harmless, but we could not tie it to a known organisation or confirm where its link leads. Don't tap it; delete it, or open the organisation's official app or website yourself.",
     "promotion_unverified": "This reads like an advertisement. Reading it is harmless, but we could not confirm where its link leads. Don't tap it; open the organisation's official app or website yourself instead.",
 }
 

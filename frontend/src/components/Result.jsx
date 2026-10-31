@@ -49,6 +49,8 @@ function ScoreBar({ score, verdict }) {
   );
 }
 
+const ACTION_LABEL = { ALLOW: "Allow", PROMOTIONAL: "Read, ignore the ad", SPAM: "Delete", WARN: "Be careful, verify first", BLOCK: "Block and report", VERIFY: "Verify independently" };
+
 function VerdictHero({ result, meta, onToggleFactors, factorsOpen }) {
   const v = getVerdict(result.verdict, result.assurance);
   const conf = Math.round((result.confidence ?? 0) * 100);
@@ -67,6 +69,12 @@ function VerdictHero({ result, meta, onToggleFactors, factorsOpen }) {
       <motion.p className="mt-3 max-w-[640px] text-[clamp(1.1rem,2.6vw,1.6rem)] font-medium leading-snug" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.8, ease: EASE }}>
         {v.headline} <span className="text-muted">{v.blurb}</span>
       </motion.p>
+      {result.category_label && (
+        <motion.p className="label mt-4 flex flex-wrap items-center gap-x-4 gap-y-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 0.6 }}>
+          <span>Type <span className="tint-text">{result.category_label}</span></span>
+          <span>Suggested action <span className="tint-text">{ACTION_LABEL[result.action] || result.action}</span></span>
+        </motion.p>
+      )}
 
       <motion.div className="mt-10 grid gap-px border hairline bg-line sm:grid-cols-[1.4fr_1fr]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.8, ease: EASE }}>
         <div className="bg-ink-2/80 p-5 sm:p-7">
