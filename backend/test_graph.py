@@ -15,7 +15,6 @@ https://miconsoft-login.com
 Call 9998269178 immediately.
 """,
     claimed_organization="Microsoft",
-    image_path="test_screenshot.png",
 )
 
 result = graph.invoke(initial_state)

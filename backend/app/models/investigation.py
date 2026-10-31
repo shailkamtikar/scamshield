@@ -1,7 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class InvestigationRequest(BaseModel):
+    # Reject unknown fields so clients cannot smuggle in extra inputs.
+    model_config = ConfigDict(extra="forbid")
+
     message: str = Field(
         ...,
         description="The suspicious message or text submitted by the user."
@@ -15,9 +18,4 @@ class InvestigationRequest(BaseModel):
     claimed_organization: str | None = Field(
         default=None,
         description="Organization claimed by the suspicious message."
-    )
-
-    image_path: str | None = Field(
-        default=None,
-        description="Path to an uploaded screenshot for OCR analysis."
     )

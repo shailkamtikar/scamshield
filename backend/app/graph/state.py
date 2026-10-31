@@ -10,8 +10,6 @@ class ScamShieldState(BaseModel):
 
     claimed_organization: str | None = None
 
-    image_path: str | None = None
-
     urls: list[str] = Field(default_factory=list)
 
     emails: list[str] = Field(default_factory=list)
