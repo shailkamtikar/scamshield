@@ -16,7 +16,7 @@ Built and deployed: app on Vercel (https://scamshield-smoky.vercel.app/), API on
 | Live camera QR scanner | Done; tried on a real phone with generated QR codes, and works over the deployed HTTPS site | manual phone test |
 | Frontend (dark and light themes, large-text mode, offline Safety tips, Real vs fake) | Done | lint, 25 unit tests incl. PDF, production build, manual runs; offline page not yet checked in airplane mode on a phone |
 | CI | Workflow present; result not checked from here | check the Actions tab |
-| Telegram bot (@ScamshieldAPIbot) | Built and tested against a fake Telegram (41 tests); **not yet run against real Telegram** | tests only; needs the token on Render, then a hands-on check of private chat, group replies and the optional ephemeral replies |
+| Telegram bot (@ScamshieldAPIbot) | Done and live; tested by hand in a private chat and a group | 41 tests against a fake Telegram plus a manual check on the real bot. The optional "only you can see this" group replies are off and untested |
 | Deployment | Done: Render (Docker, free plan, sleeps when idle) + Vercel | live health check and a phone test |
 
 ## What the "sandbox" really is

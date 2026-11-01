@@ -73,7 +73,9 @@ Every answer comes with a **verdict, a score, a confidence figure computed from 
 2. On Render, add the environment variable `TELEGRAM_BOT_TOKEN`. On the next start the server registers its own webhook and sets the bot's commands and description.
 3. To try it from a laptop without a public address, put the token in `backend/.env` and run `uv run python scripts/telegram_poll.py` (this takes the webhook away from the deployed bot until it restarts).
 
-**Things to know.** Telegram bots are not end-to-end encrypted, so messages pass through Telegram's servers. The free Render server sleeps when idle, so the first message after a quiet spell can take about a minute; Telegram keeps it and retries. Setting `TELEGRAM_EPHEMERAL=true` makes group replies use Telegram's new "only you can see this" messages (Bot API 10.2) before falling back to a private chat; this is off by default until it has been checked on a real group.
+**Tested by hand** on the live bot in a private chat and in a group.
+
+**Things to know.** Telegram bots are not end-to-end encrypted, so messages pass through Telegram's servers. The free Render server sleeps when idle, so the first message after a quiet spell can take about a minute; Telegram keeps it and retries. Setting `TELEGRAM_EPHEMERAL=true` makes group replies use Telegram's new "only you can see this" messages (Bot API 10.2) before falling back to a private chat; this is off by default.
 
 ---
 
@@ -127,7 +129,7 @@ A dark and a light theme, an optional large-text mode, and a layout that works f
 
 ```mermaid
 flowchart TD
-    A(["You send a message, link,<br/>screenshot or QR code"]) --> B{"What is it?"}
+    A(["You send a message, link, screenshot or QR code<br/>on the website or in Telegram"]) --> B{"What is it?"}
     B -- "text or email" --> E
     B -- "screenshot" --> R1["Read it<br/>Tesseract OCR + Gemini vision"]
     B -- "QR code" --> R2["Decode on your device, never opened<br/>UPI, URL, Wi-Fi, SMS"]
@@ -189,6 +191,7 @@ flowchart LR
 flowchart LR
     Br["Browser or phone"] -- "static app" --> Ve["Vercel<br/>React 19 + Vite"]
     Br -- "HTTPS, streamed (SSE)" --> Re["Render<br/>FastAPI in Docker<br/>with Tesseract"]
+    Tg["Telegram app<br/>@ScamshieldAPIbot"] -- "webhook, secret header" --> Re
     Re --> Ge["Gemini"]
     Re --> Th["Safe Browsing, VirusTotal,<br/>URLhaus, OpenPhish"]
     Re --> Us["urlscan.io sandbox"]
