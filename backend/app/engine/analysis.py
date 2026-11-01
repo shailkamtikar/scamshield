@@ -14,8 +14,8 @@ from app.engine import verdict as V
 from app.engine.signals import WEIGHTS_VERSION, Signal, dedupe, make
 from app.engine.url_analysis import UrlReport, analyze_url
 from app.intel import email_msg
-from app.intel.trust import GENERIC_BRAND_WORDS, OPEN_LINK_SERVICES, brand_tokens, is_shortener
-from app.intel.urls import ParsedUrl, extract_urls
+from app.intel.trust import GENERIC_BRAND_WORDS, OPEN_LINK_SERVICES, brand_domains, brand_tokens, is_shortener
+from app.intel.urls import ParsedUrl, extract_urls, parse_url
 
 MAX_URLS = 6
 SEV = {"SAFE": 0, "COULD_NOT_VERIFY": 1, "SUSPICIOUS": 2, "DANGEROUS": 3}
@@ -140,6 +140,28 @@ def _scam_script(ids: set, case: "Case") -> bool:
     if channel and "CREDENTIAL_REQUEST" in ids:
         return True  # a real bank never asks for a code, PIN or password and also hands you a number or link of its own
     return bool(channel and "FEAR_OR_THREAT" in ids and "PHONE_CALL_TO_ACTION" in ids)
+
+
+def build_impersonations(signals: list[Signal]) -> list[dict]:
+    """One entry per (organisation, address): who is being imitated, by which address, and the real addresses to compare with."""
+    ranked = sorted((s for s in signals if s.polarity == "risk" and s.brand and s.shown), key=lambda s: -s.points)
+    seen, out = set(), []
+    for s in ranked:
+        key = (s.brand, s.shown.lower())
+        official = [d for d in brand_domains(s.brand)][:6]
+        if key in seen or not official:
+            continue
+        seen.add(key)
+        parsed = parse_url("https://" + s.shown)
+        out.append({
+            "brand": s.brand,
+            "kind": "sender" if s.source == "email" else "link",
+            "reason": s.id,
+            "shown": s.shown,
+            "owner": parsed.registrable if parsed else s.shown,
+            "official": official,
+        })
+    return out[:4]
 
 
 def identified_sender(case: "Case") -> bool:
@@ -385,6 +407,7 @@ def step_decide(case: Case) -> Case:
         "reasoning_model": "",
         "analysis_note": "",
         "message_type": case.msg.message_type if case.msg else None,
+        "impersonations": build_impersonations(case.signals),
         "informational_wording": informational,
     }
     case.result.update(case.extra)

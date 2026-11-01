@@ -110,6 +110,8 @@ class Signal:
     explanation: str
     source: str
     target: str | None = None  # normalised URL/domain key; None = message-level
+    brand: str | None = None  # organisation this evidence says is being imitated (shown as "real vs fake")
+    shown: str | None = None  # the address (link host or sender domain) that imitates it
     polarity: str = field(init=False)
     points: int = field(init=False)
     strength: str = field(init=False)
@@ -132,8 +134,8 @@ class Signal:
         }
 
 
-def make(signal_id: str, explanation: str, source: str, target: str | None = None) -> Signal:
-    return Signal(signal_id, explanation, source, target)
+def make(signal_id: str, explanation: str, source: str, target: str | None = None, brand: str | None = None, shown: str | None = None) -> Signal:
+    return Signal(signal_id, explanation, source, target, brand, shown)
 
 
 def dedupe(signals: list[Signal]) -> list[Signal]:

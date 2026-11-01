@@ -5,6 +5,7 @@ import { MODE_CONFIG, MODES } from "../lib/modes";
 import { REACH_LABEL, TRUST_LABEL, getVerdict } from "../lib/verdict";
 import { ageLabel, defang, shortUrl } from "../lib/format";
 import DomainBreakdown from "./DomainBreakdown";
+import Impersonation from "./Impersonation";
 import { ExternalLink } from "./sections/Help";
 
 const EASE = [0.16, 1, 0.3, 1];
@@ -484,6 +485,9 @@ export default function Result({ meta, imageUrl, onReset }) {
 
       <Block title="Why we say this" i={0}><Reasons result={result} /></Block>
       <Block title="What we found" i={1}><WarningSigns result={result} /></Block>
+      {result.impersonations?.length > 0 && (
+        <Block title="Real vs fake" kicker="who this is pretending to be" i={1}><Impersonation items={result.impersonations} /></Block>
+      )}
       <SuspiciousParts result={result} />
       <Block title="What to do next" i={2}><NextSteps result={result} /></Block>
 

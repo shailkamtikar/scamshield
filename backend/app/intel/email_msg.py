@@ -198,7 +198,8 @@ def _signals(e: ParsedEmail) -> list[Signal]:
         info = classify(sender_url)
         lex = {s.id for s in lexical.analyze(sender_url, info)} if info.tier != "OFFICIAL" else set()
         if lex & {"BRAND_LOOKALIKE", "BRAND_COMBOSQUAT", "HOMOGRAPH"}:
-            out.append(make("SENDER_LOOKALIKE", f"The sender's domain {sender_domain} imitates a known organisation.", "email"))
+            named = next((s for s in lexical.analyze(sender_url, info) if s.brand), None)
+            out.append(make("SENDER_LOOKALIKE", f"The sender's domain {sender_domain} imitates {named.brand if named else 'a known organisation'}.", "email", brand=named.brand if named else None, shown=sender_domain))
         else:
             # a brand named in the display name while the address belongs to someone else (a free mailbox, another company)
             low_name = re.sub(r"[^a-z0-9 ]", " ", e.from_name.lower())
@@ -207,7 +208,7 @@ def _signals(e: ParsedEmail) -> list[Signal]:
                 if len(token) < 3 or token in GENERIC_BRAND_WORDS or token in squashed:
                     continue
                 if re.search(rf"\b{re.escape(token)}\b", low_name) and not (info.tier == "OFFICIAL" and info.brand == brand.name):
-                    out.append(make("SENDER_DISPLAY_NAME_MISMATCH", f"The sender calls itself '{e.from_name.strip()}' but the address is {e.from_addr}, which is not {brand.name}'s.", "email"))
+                    out.append(make("SENDER_DISPLAY_NAME_MISMATCH", f"The sender calls itself '{e.from_name.strip()}' but the address is {e.from_addr}, which is not {brand.name}'s.", "email", brand=brand.name, shown=sender_domain))
                     break
 
     if e.reply_to and sender_domain and _registrable(_domain(e.reply_to)) != sender_reg:

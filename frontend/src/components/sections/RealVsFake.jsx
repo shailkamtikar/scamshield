@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Eye, X } from "lucide-react";
 import { useState } from "react";
-import { diffAgainst } from "../../lib/domains";
+import DiffAddress from "../DiffAddress";
 import { EASE, FadeUp, SectionHead } from "../ui/Reveal";
 
 /** Illustrative address pairs. The real ones are the organisations' genuine addresses; the fake ones are made up for teaching. */
@@ -12,29 +12,6 @@ const PAIRS = [
   { id: "extra", label: "One extra letter", real: "google.com", fake: "gooogle.com", owner: "gooogle.com", note: "A single added letter is enough to be a different, scammer-owned address." },
   { id: "gov", label: "A dash instead of a dot", real: "incometax.gov.in", fake: "incometax-gov.in", owner: "incometax-gov.in", note: "Real government sites end in .gov.in, a zone only the government can register. A dash is just an ordinary name anyone can buy." },
 ];
-
-function Fake({ pair, reveal }) {
-  const segs = diffAgainst(pair.real, pair.fake);
-  const ownerStart = pair.fake.length - pair.owner.length;
-  let pos = 0;
-  return (
-    <p className="break-all font-mono text-[clamp(1rem,2.4vw,1.5rem)] leading-snug">
-      {segs.flatMap((seg) => {
-        const out = [];
-        for (let k = 0; k < seg.text.length; k += 1) {
-          const idx = pos + k;
-          const hit = reveal && seg.kind === "diff";
-          const isOwner = reveal && idx >= ownerStart;
-          out.push(
-            <span key={idx} className={`transition-colors duration-500 ${hit ? "rounded-[3px] bg-[rgba(255,77,94,0.22)] text-danger" : isOwner ? "text-text" : "text-muted"} ${isOwner ? "underline decoration-[var(--color-danger)] decoration-2 underline-offset-[6px]" : ""}`}>{seg.text[k]}</span>,
-          );
-        }
-        pos += seg.text.length;
-        return out;
-      })}
-    </p>
-  );
-}
 
 export default function RealVsFake() {
   const [id, setId] = useState(PAIRS[0].id);
@@ -65,7 +42,7 @@ export default function RealVsFake() {
             </div>
             <div className="surface p-6 sm:p-8">
               <p className="mb-4 flex items-center gap-2 text-[13px] font-medium text-danger"><X size={16} /> The fake address</p>
-              <Fake pair={pair} reveal={reveal} />
+              <DiffAddress real={pair.real} fake={pair.fake} owner={pair.owner} reveal={reveal} />
               <div className="mt-4 min-h-[3.5rem]">
                 <AnimatePresence mode="wait" initial={false}>
                   {reveal ? (

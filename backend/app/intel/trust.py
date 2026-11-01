@@ -112,6 +112,14 @@ def brand_tokens() -> dict[str, Brand]:
     return tokens
 
 
+def brand_domains(name: str) -> tuple[str, ...]:
+    """The organisation's own addresses, as listed in the registry (empty if unknown)."""
+    for brand in _brands():
+        if brand.name == name:
+            return brand.domains
+    return ()
+
+
 GENERIC_BRAND_WORDS = {
     "mail", "pay", "play", "docs", "drive", "maps", "open", "music", "one", "go", "app", "web", "live", "news", "life",
     "bank", "money", "cash", "card", "home", "shop", "store", "online", "direct", "invest", "trade", "secure",

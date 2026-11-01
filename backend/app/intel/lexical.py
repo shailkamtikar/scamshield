@@ -78,6 +78,12 @@ def _deleet_variants(word: str) -> set[str]:
     return variants
 
 
+def _swapped(a: str, b: str) -> bool:
+    """True when a and b differ only by two neighbouring letters trading places."""
+    diff = [i for i in range(len(a)) if a[i] != b[i]]
+    return len(diff) == 2 and diff[1] == diff[0] + 1 and a[diff[0]] == b[diff[1]] and a[diff[1]] == b[diff[0]]
+
+
 def _match_brand(word: str, tokens: dict, allow_substring: bool = True):
     """Return (brand, kind) where kind is 'exact', 'embedded' or 'lookalike'."""
 
@@ -99,6 +105,13 @@ def _match_brand(word: str, tokens: dict, allow_substring: bool = True):
         if variant != word and variant in tokens and len(variant) >= 5:
             return tokens[variant], "lookalike"
 
+    # two neighbouring letters swapped: "hbsc" for "hsbc", "paytm" as "patym". Short names are too short for the
+    # similarity score below, but a swap almost never turns into another real word.
+    if len(word) >= 4:
+        for token, brand in tokens.items():
+            if len(token) == len(word) and word != token and token not in GENERIC_BRAND_WORDS and _swapped(word, token):
+                return brand, "lookalike"
+
     if len(word) >= 6:
         for token, brand in tokens.items():
             if len(token) >= 6 and len(word) >= 6 and abs(len(token) - len(word)) <= 2 and word != token and token not in GENERIC_BRAND_WORDS and word not in token and token not in word:
@@ -112,8 +125,8 @@ def analyze(parsed: ParsedUrl, trust: TrustInfo, extra_brands: tuple[str, ...] =
     target = parsed.key
     src = "lexical"
 
-    def add(signal_id: str, detail: str):
-        signals.append(make(signal_id, detail, src, target))
+    def add(signal_id: str, detail: str, brand=None):
+        signals.append(make(signal_id, detail, src, target, brand=getattr(brand, "name", None), shown=parsed.host_ascii if brand else None))
 
     host = parsed.host
 
@@ -164,7 +177,7 @@ def analyze(parsed: ParsedUrl, trust: TrustInfo, extra_brands: tuple[str, ...] =
             brand, _ = _match_brand(word, brand_tokens(), allow_substring=False)
             if brand is not None and word not in GENERIC_BRAND_WORDS and len(word) >= 3:
                 if parsed.registrable.lower() not in {d.lower() for d in brand.domains}:
-                    add("BRAND_IN_SUBDOMAIN_OR_PATH", f"The address mentions '{word}' ({brand.name}) but the site is {parsed.registrable}.")
+                    add("BRAND_IN_SUBDOMAIN_OR_PATH", f"The address mentions '{word}' ({brand.name}) but the site is {parsed.registrable}.", brand)
                     break
         return signals
 
@@ -202,14 +215,14 @@ def analyze(parsed: ParsedUrl, trust: TrustInfo, extra_brands: tuple[str, ...] =
     if brand_found:
         brand, kind, word = brand_found
         if kind == "lookalike":
-            add("BRAND_LOOKALIKE", f"'{parsed.domain_label}' imitates {brand.name} but is not a {brand.name} domain.")
+            add("BRAND_LOOKALIKE", f"'{parsed.domain_label}' imitates {brand.name} but is not a {brand.name} domain.", brand)
         elif admin_in_label:
-            add("BRAND_COMBOSQUAT", f"'{parsed.domain_label}' combines {brand.name} with '{admin_in_label[0]}', a common phishing pattern.")
+            add("BRAND_COMBOSQUAT", f"'{parsed.domain_label}' combines {brand.name} with '{admin_in_label[0]}', a common phishing pattern.", brand)
         elif len(label_words) > 1 or kind == "embedded":
-            add("BRAND_IN_DOMAIN", f"'{parsed.domain_label}' contains the {brand.name} name but is not a {brand.name} domain.")
+            add("BRAND_IN_DOMAIN", f"'{parsed.domain_label}' contains the {brand.name} name but is not a {brand.name} domain.", brand)
         elif word in tokens and tokens[word].name and word not in GENERIC_BRAND_WORDS and len(word) >= 5:
             # e.g. "paytm.xyz": brand label on a foreign suffix
-            add("BRAND_IN_DOMAIN", f"'{parsed.registrable}' uses the {brand.name} name but is not a {brand.name} domain.")
+            add("BRAND_IN_DOMAIN", f"'{parsed.registrable}' uses the {brand.name} name but is not a {brand.name} domain.", brand)
     else:
         strong_admin = [w for w in admin_in_label if w in STRONG_ADMIN_WORDS]
         if strong_admin and (len(admin_in_label) >= 2 or len(label_words) >= 2) or len(admin_in_label) >= 3:
@@ -222,7 +235,7 @@ def analyze(parsed: ParsedUrl, trust: TrustInfo, extra_brands: tuple[str, ...] =
             brand, kind = _match_brand(word, tokens, allow_substring=False)
             if brand is not None and word not in GENERIC_BRAND_WORDS and (len(word) >= 3 or word == 'fb'):
                 where = "address" if word in sub_words else "page path"
-                add("BRAND_IN_SUBDOMAIN_OR_PATH", f"The {where} mentions '{word}' ({brand.name}) but the site is {parsed.registrable}.")
+                add("BRAND_IN_SUBDOMAIN_OR_PATH", f"The {where} mentions '{word}' ({brand.name}) but the site is {parsed.registrable}.", brand)
                 break
 
     return signals

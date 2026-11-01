@@ -67,7 +67,7 @@ def analyze_url(
         owned = {d.lower() for b in expected_brands for d in b.domains}
         if parsed.registrable.lower() not in owned and not info.shortener:
             names = ", ".join(sorted({b.name for b in expected_brands})[:2])
-            signals.append(make("BRAND_MISMATCH_LINK", f"The message talks about {names}, but the link goes to {parsed.registrable}.", "message", t))
+            signals.append(make("BRAND_MISMATCH_LINK", f"The message talks about {names}, but the link goes to {parsed.registrable}.", "message", t, brand=sorted({b.name for b in expected_brands})[0], shown=parsed.host_ascii))
 
     if info.tier == "UNKNOWN" and not info.platform and not parsed.is_ip and not any(s.id in V.FAKE_IDS for s in signals):
         if url_model.is_risky(parsed.registrable):
@@ -160,7 +160,7 @@ def analyze_url(
     if destination:
         for s in destination._signals:
             if s.polarity == "risk" and not any(x.id == s.id and x.target == t for x in signals):
-                signals.append(make(s.id, s.explanation, s.source, t))
+                signals.append(make(s.id, s.explanation, s.source, t, brand=s.brand, shown=s.shown))
         tier = destination.trust["tier"] if destination.trust["tier"] != "OFFICIAL" or info.tier == "OFFICIAL" else "POPULAR"
         outcome = "OK"
         if info.shortener and destination.trust["tier"] in {"OFFICIAL", "POPULAR"}:
