@@ -52,6 +52,15 @@ class Settings(BaseSettings):
     gemini_chat_api_key: str | None = None
     api_access_key: str | None = None
 
+    # Telegram bot (all optional; the bot is off without a token).
+    telegram_bot_token: str | None = None
+    telegram_public_url: str | None = None  # https address of this API; Render's own address is used if empty
+    render_external_url: str | None = None  # set by Render itself
+    telegram_checks_per_hour: int = 10  # per person, so one user cannot use up the shared free quotas
+    telegram_checks_per_day: int = 30
+    telegram_allowed_users: str = ""  # optional: comma separated user ids or usernames; empty means everyone
+    telegram_ephemeral: bool = False  # try Telegram's "visible only to you" group replies before a private chat
+
     # Feature switches (all default on).
     enable_network_intel: bool = True
     enable_page_inspection: bool = True
@@ -72,7 +81,7 @@ class Settings(BaseSettings):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
-    @field_validator("tesseract_cmd", "gemini_api_key", "gemini_chat_api_key", mode="before")
+    @field_validator("tesseract_cmd", "gemini_api_key", "gemini_chat_api_key", "telegram_bot_token", "telegram_public_url", "render_external_url", mode="before")
     @classmethod
     def _blank_to_none(cls, value):
         return value or None
@@ -86,6 +95,7 @@ class Settings(BaseSettings):
             "sandbox_live_scan": bool(self.urlscan_api_key),
             "chat": bool(self.gemini_chat_api_key),
             "tesseract": bool(self.tesseract_cmd),
+            "telegram": bool(self.telegram_bot_token),
         }
 
 

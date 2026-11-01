@@ -15,7 +15,12 @@ Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 async def read_image(file: UploadFile) -> tuple[bytes, str]:
     """Read and validate an uploaded image by its real content (not its name or declared type)."""
 
-    data = await file.read()
+    return validate_image(await file.read())
+
+
+def validate_image(data: bytes) -> tuple[bytes, str]:
+    """The same checks for images that arrive some other way (for example from a chat app)."""
+
     if not data:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
     if len(data) > MAX_UPLOAD_BYTES:

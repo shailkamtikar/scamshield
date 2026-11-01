@@ -14,6 +14,8 @@ An explainable scam and phishing checker for **messages, emails, links, screensh
 
 ### 👉 [**Try it live: scamshield-smoky.vercel.app**](https://scamshield-smoky.vercel.app/)
 
+Prefer chat? **[Check on Telegram: @ScamshieldAPIbot](https://t.me/ScamshieldAPIbot)**
+
 <sub>Works on phones too. The API runs on a free plan and sleeps when idle, so the very first check after a quiet spell can take up to a minute while it wakes up.</sub>
 
 <br />
@@ -26,7 +28,7 @@ An explainable scam and phishing checker for **messages, emails, links, screensh
 
 ## Contents
 
-[What it does](#what-it-does) · [See it in action](#see-it-in-action) · [How it works](#how-it-works) · [What you get back](#what-you-get-back) · [How it behaves](#how-it-behaves) · [Design principles](#design-principles) · [Accuracy](#accuracy-measured-honestly) · [Security and privacy](#security-and-privacy) · [Tech stack](#tech-stack) · [Run it locally](#run-it-locally) · [Deploy](#deployment) · [Limits](#known-limits)
+[What it does](#what-it-does) · [Telegram bot](#telegram-bot) · [See it in action](#see-it-in-action) · [How it works](#how-it-works) · [What you get back](#what-you-get-back) · [How it behaves](#how-it-behaves) · [Design principles](#design-principles) · [Accuracy](#accuracy-measured-honestly) · [Security and privacy](#security-and-privacy) · [Tech stack](#tech-stack) · [Run it locally](#run-it-locally) · [Deploy](#deployment) · [Limits](#known-limits)
 
 ---
 
@@ -41,9 +43,37 @@ Most scam checkers only look at a link. ScamShield treats the **whole message as
 | **A screenshot** | Reads it with OCR and Gemini vision, pulls out the sender and links, then runs the same checks. |
 | **A QR code** (camera or image) | Decodes it **on your device and never opens it**. UPI and Google Pay QRs show the payee, address and amount; other links get the full investigation. |
 
+The same checks are available in **Telegram**: forward the message to the bot and get the answer in a private chat.
+
 Every answer comes with a **verdict, a score, a confidence figure computed from the evidence, the reasons, and what to do next**. It can also show **who a message is pretending to be**, side by side with the real address.
 
 > ScamShield is an automated assessment, not a guarantee. If you have lost money, call **1930** or report at [cybercrime.gov.in](https://cybercrime.gov.in).
+
+---
+
+## Telegram bot
+
+[**@ScamshieldAPIbot**](https://t.me/ScamshieldAPIbot) runs the same investigation as the website, inside Telegram, so a suspicious message can be checked without leaving the chat it arrived in.
+
+| You do this | The bot does this |
+|---|---|
+| Forward or paste a suspicious message to the bot | Replies in the private chat with the verdict, the reasons, any real-vs-fake address comparison and what to do |
+| Send a screenshot, or a photo of a QR code | Reads it with OCR (screenshots) or decodes it (QR codes), then checks it. A photo that is mostly a code is read as a code |
+| In a group, reply to the suspicious message with `@ScamshieldAPIbot` (or `/check`) | Answers **only you**, in your private chat. If you have never pressed Start, it posts a one-line note with a Start link instead |
+| Wait 5 to 15 seconds | A "checking" message appears first and is edited into the answer |
+
+**What it never does:** open a link (links in answers are written like `hxxps://example[.]com`), store a message or a file, or answer anyone but the person who asked.
+
+**How it is built.** Telegram calls one webhook on the same FastAPI server that runs the website (`POST /telegram/webhook`). The reply is produced after a quick `200 OK`, using the same pipeline, so there is no second system to keep in step. There is no extra library: [`telegram_api.py`](backend/app/services/telegram_api.py) is a small HTTPS client and [`telegram_bot.py`](backend/app/services/telegram_bot.py) holds the behaviour.
+
+**Protection.** Telegram's webhook secret is checked on every call (derived from the token, nothing extra to set). Each person gets 10 checks an hour and 30 a day (`TELEGRAM_CHECKS_PER_HOUR`, `TELEGRAM_CHECKS_PER_DAY`), so one user cannot use up the shared free quotas. At most three checks run at once on the free server. An optional allow-list (`TELEGRAM_ALLOWED_USERS`) can limit the bot to chosen people for a demo. Repeated deliveries of the same update are ignored.
+
+**Set it up** (free):
+1. In Telegram, open **@BotFather**, send `/newbot`, and copy the token.
+2. On Render, add the environment variable `TELEGRAM_BOT_TOKEN`. On the next start the server registers its own webhook and sets the bot's commands and description.
+3. To try it from a laptop without a public address, put the token in `backend/.env` and run `uv run python scripts/telegram_poll.py` (this takes the webhook away from the deployed bot until it restarts).
+
+**Things to know.** Telegram bots are not end-to-end encrypted, so messages pass through Telegram's servers. The free Render server sleeps when idle, so the first message after a quiet spell can take about a minute; Telegram keeps it and retries. Setting `TELEGRAM_EPHEMERAL=true` makes group replies use Telegram's new "only you can see this" messages (Bot API 10.2) before falling back to a private chat; this is off by default until it has been checked on a real group.
 
 ---
 
@@ -239,7 +269,7 @@ All numbers come from scripts in [`backend/scripts/`](backend/scripts) and can b
 | **Emails**, formal mails, spoofing, attachments, hidden links | 0 false alarms, 0 missed |
 | **Unseen scam scripts**, sealed red-team set written before any fix | ~65 % get exactly the right category, but **0 malicious messages were called harmless** |
 | **Messages written after the engine was frozen**, rules only | 62.5 % of scams detected, 0 % false alarms. With Gemini's second opinion this was 96 % when measured earlier |
-| **Tests** | 333 backend and 25 frontend tests pass on every push |
+| **Tests** | 374 backend and 25 frontend tests pass on every push |
 
 **What that means in plain terms:** the engine is strong on the common scripts and very careful with genuine messages. On scam wording it has never seen, the rules alone catch fewer scams, and in an earlier measurement the AI second opinion closed most of that gap (it has not been re-measured since). That gap is the main weakness, and it is stated rather than hidden.
 
@@ -303,6 +333,7 @@ Open http://localhost:5173.
 | `VIRUSTOTAL_API_KEY` | VirusTotal domain reputation (free tier: 4/min) | No |
 | `URLHAUS_AUTH_KEY` | abuse.ch URLhaus | No |
 | `URLSCAN_API_KEY` | Real-browser sandbox scans on urlscan.io | No |
+| `TELEGRAM_BOT_TOKEN` | The Telegram bot (from @BotFather) | No (the bot is off without it) |
 
 OpenPhish and the popular-sites list need no key. How to get each key: [`docs/playbook/KEYS.md`](docs/playbook/KEYS.md).
 
@@ -315,12 +346,13 @@ OpenPhish and the popular-sites list need no key. How to get each key: [`docs/pl
 | `POST /investigate/image` | Analyse a screenshot |
 | `POST /investigate/qr`, `/investigate/qr-text` | Analyse a QR image or already-decoded QR text |
 | `POST /chat` | The "Ask about scams" assistant |
+| `POST /telegram/webhook` | Where Telegram delivers messages sent to the bot (needs Telegram's secret header) |
 
 ### Tests and benchmarks
 
 ```bash
 cd backend
-uv run pytest -q                                                  # 333 offline tests
+uv run pytest -q                                                  # 374 offline tests
 uv run python scripts/evaluate.py                                 # link benchmark, static (no network)
 uv run python scripts/evaluate.py --live                          # + live threat-feed lookups (never opens suspicious links)
 uv run python scripts/eval_messages.py                            # SMS benchmark
@@ -354,7 +386,7 @@ backend/app/qr/       QR payload types and UPI analysis
 backend/app/graph/    LangGraph pipeline
 backend/app/api/      REST and streaming endpoints
 backend/scripts/      benchmark and evaluation scripts
-backend/tests/        333 offline tests
+backend/tests/        374 offline tests
 frontend/src/         React app: components, sections, lib (verdicts, domains, PDF), offline service worker
 data/benchmark/       labelled links, messages, emails and red-team sets used by the evaluators
 docs/                 AUDIT, STATUS, screenshots, test QR sheet, development playbook

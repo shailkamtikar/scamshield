@@ -8,7 +8,7 @@ Built and deployed: app on Vercel (https://scamshield-smoky.vercel.app/), API on
 
 | Area | State | Evidence |
 |---|---|---|
-| Message, screenshot and QR analysis | Done | 333 backend and 25 frontend tests, benchmarks below, run through the real UI and the deployed site |
+| Message, screenshot and QR analysis | Done | 374 backend and 25 frontend tests, benchmarks below, run through the real UI and the deployed site |
 | Link checks (structure, lookalikes, redirects, feeds, domain age) | Done | live runs against Google Safe Browsing, VirusTotal, URLhaus, OpenPhish, Phishing.Database |
 | **Page inspection (text-only "sandbox")** | Done, calibrated on 560 real pages | see below |
 | **Browser sandbox (urlscan.io)** | Done; key configured, live scan verified (about 18 s, final address, title, domain age, screenshot) | tests plus a live submission |
@@ -16,6 +16,7 @@ Built and deployed: app on Vercel (https://scamshield-smoky.vercel.app/), API on
 | Live camera QR scanner | Done; tried on a real phone with generated QR codes, and works over the deployed HTTPS site | manual phone test |
 | Frontend (dark and light themes, large-text mode, offline Safety tips, Real vs fake) | Done | lint, 25 unit tests incl. PDF, production build, manual runs; offline page not yet checked in airplane mode on a phone |
 | CI | Workflow present; result not checked from here | check the Actions tab |
+| Telegram bot (@ScamshieldAPIbot) | Built and tested against a fake Telegram (41 tests); **not yet run against real Telegram** | tests only; needs the token on Render, then a hands-on check of private chat, group replies and the optional ephemeral replies |
 | Deployment | Done: Render (Docker, free plan, sleeps when idle) + Vercel | live health check and a phone test |
 
 ## What the "sandbox" really is

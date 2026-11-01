@@ -10,6 +10,8 @@ from app.api.investigate import router as investigate_router
 from app.api.middleware import ProtectMiddleware
 from app.api.investigate_image import router as investigate_image_router
 from app.api.investigate_qr import router as investigate_qr_router
+from app.api.telegram import register as telegram_register
+from app.api.telegram import router as telegram_router
 from app.config import settings
 from app.engine.signals import WEIGHTS_VERSION
 from app.intel import reputation
@@ -21,6 +23,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 async def lifespan(_app):
     # Load threat lists in the background so startup is never blocked.
     threading.Thread(target=reputation.load_all_lists, daemon=True).start()
+    threading.Thread(target=telegram_register, daemon=True).start()  # does nothing without a bot token
     yield
 
 
@@ -41,6 +44,7 @@ app.include_router(investigate_router)
 app.include_router(chat_router)
 app.include_router(investigate_image_router)
 app.include_router(investigate_qr_router)
+app.include_router(telegram_router)
 
 
 @app.get("/")

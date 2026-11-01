@@ -61,6 +61,7 @@ export default function Footer({ onGo, onCheck }) {
             <li><button type="button" onClick={onCheck} className={linkCls}>Message scanner</button></li>
             <li><button type="button" onClick={() => onGo("how")} className={linkCls}>How it works</button></li>
             <li><button type="button" onClick={() => onGo("library")} className={linkCls}>Threat library</button></li>
+            <li><ExternalLink href="https://t.me/ScamshieldAPIbot" className={linkCls}>Check on Telegram</ExternalLink></li>
           </Col>
           <Col title="Resources">
             <li><button type="button" onClick={() => onGo("signs")} className={linkCls}>Scam awareness</button></li>
