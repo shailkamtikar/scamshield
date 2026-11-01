@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MODE_CONFIG, MODES } from "../lib/modes";
 import { REACH_LABEL, TRUST_LABEL, getVerdict } from "../lib/verdict";
 import { ageLabel, defang, shortUrl } from "../lib/format";
+import DomainBreakdown from "./DomainBreakdown";
 import { ExternalLink } from "./sections/Help";
 
 const EASE = [0.16, 1, 0.3, 1];
@@ -219,7 +220,12 @@ function SuspiciousParts({ result }) {
         {links.length > 0 && (
           <div className={phrases.length ? "mt-5 border-t border-line pt-5" : ""}>
             <p className="label mb-3">Links to be careful with (shown unclickable)</p>
-            <ul className="space-y-2">{links.map((u) => <li key={u.url} className="break-all font-mono text-[13px] text-danger">{shortUrl(defang(u.url), 110)}</li>)}</ul>
+            <ul className="space-y-4">{links.map((u) => (
+              <li key={u.url}>
+                <p className="break-all font-mono text-[12.5px] text-faint">{shortUrl(defang(u.url), 110)}</p>
+                <DomainBreakdown host={u.host} registrable={u.registrable} color="var(--color-danger)" className="mt-2" />
+              </li>
+            ))}</ul>
           </div>
         )}
       </div>
@@ -286,6 +292,7 @@ function InspectionCard({ u, index, nested = false }) {
         <div className="min-w-0 flex-1">
           <div className="label mb-1">{nested ? "Final destination" : `Link ${index + 1}`}</div>
           <p className="break-all font-mono text-[13px] text-text">{shortUrl(shown, 120)}</p>
+          <DomainBreakdown host={u.host} registrable={u.registrable} color={v.color} className="mt-3" />
           <button type="button" onClick={() => setReveal((x) => !x)} className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-faint transition-colors hover:text-text">
             {reveal_ ? <EyeOff size={12} /> : <Eye size={12} />} {reveal_ ? "Hide real link" : "Show real link (never click suspicious links)"}
           </button>

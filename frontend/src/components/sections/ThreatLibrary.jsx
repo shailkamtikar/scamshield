@@ -43,7 +43,7 @@ export default function ThreatLibrary({ onTry }) {
 
           <FadeUp delay={0.1} className="lg:sticky lg:top-28 lg:self-start">
             <div id="library-panel" role="tabpanel" className="surface relative overflow-hidden p-6 sm:p-8">
-              <span aria-hidden className="display pointer-events-none absolute -right-2 -top-6 select-none text-[11rem] leading-none text-white/[0.025]">{String(idx + 1).padStart(2, "0")}</span>
+              <span aria-hidden className="display pointer-events-none absolute -right-2 -top-6 select-none text-[11rem] leading-none text-[var(--ghost)]">{String(idx + 1).padStart(2, "0")}</span>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div key={cat.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.45, ease: EASE }}>
                   <h3 className="display text-[2.2rem]">{cat.name}</h3>

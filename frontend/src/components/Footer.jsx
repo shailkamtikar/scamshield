@@ -64,6 +64,7 @@ export default function Footer({ onGo, onCheck }) {
           </Col>
           <Col title="Resources">
             <li><button type="button" onClick={() => onGo("signs")} className={linkCls}>Scam awareness</button></li>
+            <li><button type="button" onClick={() => onGo("tips")} className={linkCls}>Safety tips (works offline)</button></li>
             <li><button type="button" onClick={() => onGo("help")} className={linkCls}>Cybersecurity resources</button></li>
             <li><ExternalLink href="https://cybercrime.gov.in" className={linkCls}>Report cybercrime</ExternalLink></li>
           </Col>

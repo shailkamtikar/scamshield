@@ -52,7 +52,7 @@ export default function Examples({ onTry }) {
                 return (
                   <button
                     key={ex.id + what} type="button" onClick={() => setShown(open ? i : i + 1)} aria-expanded={open}
-                    className={`block w-full rounded-xl border p-4 text-left transition-colors duration-300 ${open ? "border-[rgba(255,176,32,0.4)] bg-[rgba(255,176,32,0.05)]" : "border-line-strong hover:border-white/25"}`}
+                    className={`block w-full rounded-xl border p-4 text-left transition-colors duration-300 ${open ? "border-[rgba(255,176,32,0.4)] bg-[rgba(255,176,32,0.05)]" : "border-line-strong hover:border-[var(--line-hover)]"}`}
                   >
                     <span className="flex items-center gap-3">
                       <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold ${open ? "bg-warn text-ink" : "border border-line-strong text-faint"}`}>{i + 1}</span>

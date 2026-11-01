@@ -11,12 +11,15 @@ import Examples from "./components/sections/Examples";
 import Help from "./components/sections/Help";
 import HowItWorks from "./components/sections/HowItWorks";
 import Privacy from "./components/sections/Privacy";
+import RealVsFake from "./components/sections/RealVsFake";
 import ThreatLibrary from "./components/sections/ThreatLibrary";
+import TipsPage from "./components/TipsPage";
 import { Connector } from "./components/ui/Reveal";
 import WarningSigns from "./components/sections/WarningSigns";
 import { useInvestigation } from "./hooks/useInvestigation";
 import { fetchHealth } from "./lib/api";
 import { MODES } from "./lib/modes";
+import { useLargeText, useTheme } from "./lib/prefs";
 import { toneOf } from "./lib/verdict";
 
 export default function App() {
@@ -26,6 +29,9 @@ export default function App() {
   const [imageUrl, setImageUrl] = useState(null);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [prefill, setPrefill] = useState(null);
+  const [theme, toggleTheme] = useTheme();
+  const [large, toggleLarge] = useLargeText();
+  const [page, setPage] = useState(() => (window.location.hash === "#tips" ? "tips" : "home"));
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -67,8 +73,16 @@ export default function App() {
     else document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const go = useCallback((id) => {
+    if (id === "tips") {
+      if (!idle) { clearImage(); inv.reset(); }
+      setPage("tips");
+      window.history.replaceState(null, "", "#tips");
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    if (page !== "home") { setPage("home"); window.history.replaceState(null, "", window.location.pathname); setTimeout(() => scrollTo(id), 250); return; }
     if (!idle) { clearImage(); inv.reset(); setTimeout(() => scrollTo(id), 120); } else scrollTo(id);
-  }, [idle, inv]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [idle, inv, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const check = useCallback(() => {
     go("top");
@@ -86,19 +100,26 @@ export default function App() {
   return (
     <div className="relative min-h-screen">
       <AmbientBackground />
-      <Nav onGo={go} onCheck={check} showSections={idle} />
+      <Nav onGo={go} onCheck={check} showSections={idle && page === "home"} current={page} theme={theme} onTheme={toggleTheme} large={large} onLarge={toggleLarge} />
 
       {!online && <div role="status" className="fixed inset-x-0 top-[68px] z-30 bg-warn px-4 py-1.5 text-center text-[13px] font-medium text-ink">You are offline. ScamShield needs the internet to check things.</div>}
 
       <main>
         <AnimatePresence mode="wait">
-          {idle && (
+          {idle && page === "tips" && (
+            <motion.div key="tips" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TipsPage onCheck={check} />
+            </motion.div>
+          )}
+
+          {idle && page === "home" && (
             <motion.div key="idle" exit={{ opacity: 0, y: -16, transition: { duration: 0.3 } }}>
               <Hero mode={mode} onMode={setMode} onSubmit={submit} prefill={prefill} engineDown={health === null} />
               <Connector />
               <HowItWorks />
               <ThreatLibrary onTry={tryExample} />
               <WarningSigns />
+              <RealVsFake />
               <Examples onTry={tryExample} />
               <Connector />
               <Help />

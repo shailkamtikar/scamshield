@@ -118,7 +118,7 @@ export default function AnalyzeForm({ mode, onMode, onSubmit, prefill, engineDow
               key={m} type="button" role="tab" aria-selected={on} onClick={() => switchMode(m)}
               className={`relative flex flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2.5 text-[13.5px] font-medium transition-colors sm:flex-none sm:px-5 ${on ? "text-text" : "text-faint hover:text-muted"}`}
             >
-              {on && <motion.span layoutId="tab-pill" className="absolute inset-0 rounded-lg bg-white/[0.06] ring-1 ring-inset ring-white/10" transition={{ type: "spring", stiffness: 420, damping: 36 }} />}
+              {on && <motion.span layoutId="tab-pill" className="absolute inset-0 rounded-lg bg-[var(--glass)] ring-1 ring-inset ring-[var(--glass-line)]" transition={{ type: "spring", stiffness: 420, damping: 36 }} />}
               <Icon size={15} className="relative hidden sm:block" /> <span className="relative whitespace-nowrap">{TAB_SHORT[m]}<span className="hidden sm:inline">{TAB_LABEL[m].slice(TAB_SHORT[m].length)}</span></span>
             </button>
           );
@@ -176,7 +176,7 @@ export default function AnalyzeForm({ mode, onMode, onSubmit, prefill, engineDow
           <div>
             <div className="mb-3 inline-flex rounded-lg border border-line-strong p-0.5 text-[13px]">
               {[["camera", "Use camera"], ["upload", "Upload image"]].map(([k, l]) => (
-                <button key={k} type="button" onClick={() => { setQrSource(k); setFile(null); }} className={`rounded-md px-4 py-1.5 transition-colors ${qrSource === k ? "bg-white/[0.07] text-text" : "text-muted hover:text-text"}`}>
+                <button key={k} type="button" onClick={() => { setQrSource(k); setFile(null); }} className={`rounded-md px-4 py-1.5 transition-colors ${qrSource === k ? "bg-[var(--glass)] text-text" : "text-muted hover:text-text"}`}>
                   {l}
                 </button>
               ))}

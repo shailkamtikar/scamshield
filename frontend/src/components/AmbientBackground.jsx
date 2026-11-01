@@ -31,7 +31,7 @@ export default function AmbientBackground() {
         style={{ left, top, background: "radial-gradient(closest-side, rgba(var(--tint), 0.075), transparent 70%)" }}
       />
       <div className="noise absolute inset-0" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,transparent_40%,rgba(9,11,15,0.65)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,transparent_40%,var(--vignette)_100%)]" />
     </div>
   );
 }

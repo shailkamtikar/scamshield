@@ -15,3 +15,8 @@ createRoot(document.getElementById("root")).render(
     </ErrorBoundary>
   </StrictMode>,
 );
+
+// Offline support for the app shell and the Safety tips page (production builds only).
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}

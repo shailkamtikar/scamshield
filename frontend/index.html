@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#090B0F" />
     <meta name="description" content="ScamShield checks SMS messages, screenshots and QR codes for scams and phishing, and tells you whether a link is safe to open." />
+        <script>
+      // Apply the saved look before the page paints (dark unless the visitor chose light).
+      try {
+        var h = document.documentElement;
+        h.dataset.theme = localStorage.getItem("ss-theme") === "light" ? "light" : "dark";
+        if (localStorage.getItem("ss-large") === "1") h.dataset.text = "large";
+      } catch (e) { document.documentElement.dataset.theme = "dark"; }
+    </script>
     <title>ScamShield: verify a message before you trust it</title>
   </head>
   <body>
