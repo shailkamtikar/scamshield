@@ -1,6 +1,6 @@
 # ScamShield – build status
 
-Local build (phases 0–8). Deployment is not done yet.
+Built and deployed: app on Vercel (https://scamshield-smoky.vercel.app/), API on Render (https://scamshield-api-loes.onrender.com/health). Both redeploy on every push to `main`.
 
 > The latest audit (categories, e-mail headers, red-team sets, security fixes, readiness scores) is in [AUDIT.md](AUDIT.md).
 
@@ -8,15 +8,15 @@ Local build (phases 0–8). Deployment is not done yet.
 
 | Area | State | Evidence |
 |---|---|---|
-| Message, screenshot and QR analysis | Done | 114 backend tests, benchmarks below, run through the real UI |
+| Message, screenshot and QR analysis | Done | 333 backend and 25 frontend tests, benchmarks below, run through the real UI and the deployed site |
 | Link checks (structure, lookalikes, redirects, feeds, domain age) | Done | live runs against Google Safe Browsing, VirusTotal, URLhaus, OpenPhish, Phishing.Database |
 | **Page inspection (text-only "sandbox")** | Done, calibrated on 560 real pages | see below |
-| **Browser sandbox (urlscan.io)** | Built and tested with mocked responses; **only earlier public scans are used until a `URLSCAN_API_KEY` is added** | tests; not run against a live submission |
+| **Browser sandbox (urlscan.io)** | Done; key configured, live scan verified (about 18 s, final address, title, domain age, screenshot) | tests plus a live submission |
 | Learned domain-name model | Done | trained on 159k real phishing domains vs. 950k ordinary ones; 0.90 AUC on unseen OpenPhish domains |
-| Live camera QR scanner | Built; **not tested on a real phone** | error handling verified only |
-| Frontend (dark cinematic UI, restored on request) | Done | lint, 8 unit tests incl. PDF, production build, manual runs |
+| Live camera QR scanner | Done; tried on a real phone with generated QR codes, and works over the deployed HTTPS site | manual phone test |
+| Frontend (dark and light themes, large-text mode, offline Safety tips, Real vs fake) | Done | lint, 25 unit tests incl. PDF, production build, manual runs; offline page not yet checked in airplane mode on a phone |
 | CI | Workflow present; result not checked from here | check the Actions tab |
-| Deployment | **Not done** | |
+| Deployment | Done: Render (Docker, free plan, sleeps when idle) + Vercel | live health check and a phone test |
 
 ## What the "sandbox" really is
 

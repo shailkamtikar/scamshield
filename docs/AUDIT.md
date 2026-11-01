@@ -81,7 +81,7 @@ Reliable by design, not by measurement of this session. Good: message text is fe
 
 ## K. Remaining limits
 
-Categories beyond common cases depend on hand-written rules; rules-only coverage of unseen scam scripts is the main weakness. Spam recognition is heuristic. Non-Hindi Indian-language wording is untested. The camera scanner has not been tried on a real phone. Nothing has been deployed or load-tested. The 125 genuine and 145 red-team messages were written by us, not collected from real traffic, so real-world false alarms are unknown beyond your 17 real messages.
+Categories beyond common cases depend on hand-written rules; rules-only coverage of unseen scam scripts is the main weakness. Spam recognition is heuristic. Non-Hindi Indian-language wording is untested. The camera scanner has since been tried on a real phone, and the app is deployed (Render + Vercel); it has not been load-tested. The 125 genuine and 145 red-team messages were written by us, not collected from real traffic, so real-world false alarms are unknown beyond your 17 real messages.
 
 ## L. Readiness (out of 10, with reasons)
 
@@ -98,7 +98,7 @@ Categories beyond common cases depend on hand-written rules; rules-only coverage
 | Machine-learning quality | 4 | Two small learned models (domain names); text ML was tried and rejected; training data not re-audited this session |
 | Gemini integration | 6 | Safe design, graceful fallback; accuracy contribution not re-measured |
 | Application security | 7 | Fetcher hardened, dependencies clean; no authentication, no pen-test |
-| Production readiness | 5 | Not deployed, no real-user trial, no monitoring yet |
+| Production readiness | 5 | Deployed on free plans, no real-user trial, no monitoring yet |
 
 ## Addendum: how-to and instruction mails (ICICI "login with mobile number")
 
