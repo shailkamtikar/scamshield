@@ -65,6 +65,19 @@ Honest caveats: the 105 are still written by us, not collected from real inboxes
 
 So the *rules alone* miss scams written in wording they weren't designed for; Gemini's second opinion is what catches them. If Gemini is unavailable (no key, quota, outage) the engine falls back to the rules and accuracy on new scam scripts drops to roughly the first column. A learned local text model was tried and **rejected** because it did poorly on this held-out set (71 % detection, 29 % false alarms).
 
+## Baselines and ablation (for the report)
+
+`backend/scripts/eval_ablation.py` (static: no network, no Gemini, nothing opened). Messages: the 201 messages written after the first design (held-out 48, genuine 125, sealed red-team 28; 37 scams, 164 genuine). These sets were used for class-level fixes after their first run, so they are optimistic.
+
+| Method | Scams detected | False alarms |
+|---|---|---|
+| Keyword baseline (3 or more scam words) | 4 / 37 (10.8 %) | 12 / 164 (7.3 %) |
+| Links only | 14 / 37 (37.8 %) | 0 / 164 |
+| Wording only | 20 / 37 (54.1 %) | 1 / 164 (0.6 %) |
+| Wording + links (ScamShield, rules only) | 28 / 37 (75.7 %) | 0 / 164 |
+
+Links (1,228, static): lexical rules only 82.0 % detected / 12.0 % false alarms; + trust registry 82.0 % / 1.0 %; + learned domain-name model 84.4 % / 1.6 %. Latency of the rules alone over 542 messages: mean 18.9 ms, p95 20.3 ms. Five live requests with Gemini: 1.5 to 4.2 s, mean 2.8 s.
+
 ## Hardening added
 
 Per-IP rate limits (429 with Retry-After), optional access key, request ids, security headers, logs that never contain message text, hard time limits on link fetching, Hindi (Devanagari) scam patterns, multi-QR images through the streaming path, "valid payment request" and "no problems found" distinguished from "verified safe".

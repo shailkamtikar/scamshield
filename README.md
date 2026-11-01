@@ -236,7 +236,7 @@ Real outputs of the engine's built-in rules on a few messages (offline, no AI an
 | *"hey what's the wifi password at your place?"* | 🟢 No problems found | A Wi-Fi password is not an account secret |
 | *"Flat 50% OFF at Myntra! Shop now: myntra.com/sale"* | 🔵 Promotion | Advertisement whose link is the brand's own site |
 | *"HSBC Bank: your account is locked, verify KYC at `hbsc-bank.com`"* | 🔴 Phishing | Look-alike domain (two letters swapped), fear, a 24-hour deadline, a name that does not match the link |
-| *"Your parcel is held. Pay Rs 25 at `dc9x35ez.top/pay`"* | 🔴 Fraud / scam | A fee for a parcel you did not order, on a random-looking `.top` address |
+| *"Your parcel is held at the depot. Pay Rs 25 redelivery fee at `dc9x35ez.top/pay` today or it will be returned."* | 🔴 Fraud / scam | A fee for a parcel you did not order, on a random-looking `.top` address |
 | *"This is CBI. You are under digital arrest… transfer Rs 50,000"* | 🔴 Fraud / scam | An arrest threat combined with a demand for money |
 | *"Part time job! Earn Rs 5000 daily… message us on WhatsApp"* | 🔴 Fraud / scam | A job promise with an unverifiable channel |
 | *"Please read out the 6-digit code that came on your phone"* | 🟠 Suspicious | A code being handed to a person is flagged, but on its own the rules stop at "Suspicious" |
